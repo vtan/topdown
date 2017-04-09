@@ -14,7 +14,16 @@ renderWorld renderer world = do
   clear renderer
 
   rendererDrawColor renderer $= terrainColor
-  for_ chunkRelPositions $ \pos -> do
+  let
+    Chn2 (V2 left top) = chn 0
+    Chn2 (V2 right bottom) = chn screenSize
+    tiles = [Chn2 $ V2 x y
+      | x <- [left .. right]
+      , y <- [top .. bottom]
+      , x >= 0 && x < chunkSize
+      , y >= 0 && y < chunkSize
+      ]
+  for_ tiles $ \pos -> do
     fillRect renderer . Just $ rect pos
 
   rendererDrawColor renderer $= treeColor
@@ -29,8 +38,11 @@ renderWorld renderer world = do
     rect p = fromIntegral
       <$> Rectangle (P . unScr2 $ scr p - halfTile) (unScr2 tileSize)
     scr = chnToScr tileSize (playerPos world) midScr
+    chn = scrToChn tileSize midScr (playerPos world)
     halfTile = (`quot` 2) <$> tileSize
     midScr = (`quot` 2) <$> screenSize
+
+
 
 screenSize :: Num a => Scr2 a
 screenSize = Scr2 $ V2 800 600

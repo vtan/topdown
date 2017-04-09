@@ -27,6 +27,18 @@ chnToScr tileSize eyeChn eyeScr pos = eyeScr + eyeToPosOnScr
   where
     eyeToPosOnScr = Scr2 $ (*) <$> unScr2 tileSize <*> unChn2 (pos - eyeChn)
 
+scrToChn :: Integral a => Scr2 a -> Scr2 a -> Chn2 a -> Scr2 a -> Chn2 a
+scrToChn tileSize eyeScr eyeChn pos = eyeChn + eyeToPosInChn
+  where
+    eyeToPosInChn = Chn2 $ div <$> unScr2 (pos - eyeScr) <*> unScr2 tileSize
+
+chunkRelPositions :: Integral a => [Chn2 a]
+chunkRelPositions = [Chn2 $ V2 x y
+  | x <- [0 .. chunkSize - 1] , y <- [0 .. chunkSize - 1]]
+
+chunkSize :: Num a => a
+chunkSize = 16
+
 
 
 lensScr2 :: Lens' (Scr2 a) (V2 a)

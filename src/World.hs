@@ -5,7 +5,6 @@ import Spaces
 import Control.Monad.Random
 import Data.Hashable (hash)
 import Data.Set (Set)
-import Linear (V2(..))
 
 import qualified Data.Set as Set
 
@@ -32,10 +31,3 @@ randomChunk = do
   where
     treeOnTile _tile = (< p) <$> getRandom
     p = 0.1 :: Float
-
-chunkRelPositions :: Integral a => [Chn2 a]
-chunkRelPositions = [Chn2 $ V2 x y
-  | x <- [0 .. chunkSize - 1] , y <- [0 .. chunkSize - 1]]
-
-chunkSize :: Num a => a
-chunkSize = 16
