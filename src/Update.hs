@@ -1,7 +1,9 @@
 module Update where
 
+import Spaces
 import World
 
+import Control.Monad.State
 import Data.List (foldl')
 import SDL
 
@@ -21,15 +23,19 @@ updateWorld events world = foldl' applyKeyPress world keyPresses
       ]
 
 applyKeyPress :: World -> Scancode -> World
-applyKeyPress world event = case event of
-  ScancodeRight -> movePlayer $ unit _x
-  ScancodeLeft -> movePlayer . negate $ unit _x
-  ScancodeDown -> movePlayer $ unit _y
-  ScancodeUp -> movePlayer . negate $ unit _y
-  _ -> world
+applyKeyPress world scancode = move world
   where
-    movePlayer d
-      | Set.member newPos (treeRelPositions $ chunk world) = world
-      | otherwise = world { playerPos = playerPos world + d }
-      where
-        newPos = playerPos world + d
+    move = case scancode of
+      ScancodeRight -> movePlayer $ unit _x
+      ScancodeLeft -> movePlayer . negate $ unit _x
+      ScancodeDown -> movePlayer $ unit _y
+      ScancodeUp -> movePlayer . negate $ unit _y
+      _ -> id
+
+movePlayer :: Chn2 Int -> World -> World
+movePlayer dir world = flip execState world $ do
+  chunk' <- state $ getChunkAt i'
+  unless (Set.member pos' $ treeRelPositions chunk') $
+    modify' $ \w -> w { playerChunk = i', playerPos = pos' }
+  where
+    (i', pos') = normalizeChunkPos (playerChunk world) (playerPos world + dir)

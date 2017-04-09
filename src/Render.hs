@@ -3,37 +3,42 @@ module Render where
 import Spaces
 import World
 
+import Control.Monad
+import Control.Monad.State
 import Data.Foldable (for_)
 import SDL
 
+import qualified Data.Set as Set
 
 
-renderWorld :: Renderer -> World -> IO ()
+
+renderWorld :: Renderer -> World -> IO World
 renderWorld renderer world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
 
-  rendererDrawColor renderer $= terrainColor
   let
     Chn2 (V2 left top) = chn 0
     Chn2 (V2 right bottom) = chn screenSize
     tiles = [Chn2 $ V2 x y
       | x <- [left .. right]
       , y <- [top .. bottom]
-      , x >= 0 && x < chunkSize
-      , y >= 0 && y < chunkSize
       ]
-  for_ tiles $ \pos -> do
-    fillRect renderer . Just $ rect pos
-
-  rendererDrawColor renderer $= treeColor
-  for_ (treeRelPositions $ chunk world) $ \pos -> do
-    fillRect renderer . Just $ rect pos
+  world' <- flip execStateT world $
+    for_ tiles $ \pos -> do
+      let (i, pos') = normalizeChunkPos (playerChunk world) pos
+      chunk <- state $ getChunkAt i
+      rendererDrawColor renderer $= terrainColor
+      fillRect renderer . Just $ rect pos
+      when (Set.member pos' $ treeRelPositions chunk) $ do
+        rendererDrawColor renderer $= treeColor
+        fillRect renderer . Just $ rect pos
 
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just $ rect (playerPos world)
 
   present renderer
+  pure world'
   where
     rect p = fromIntegral
       <$> Rectangle (P . unScr2 $ scr p - halfTile) (unScr2 tileSize)

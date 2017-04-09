@@ -3,7 +3,6 @@
 module Lib (main) where
 
 import Render
-import Spaces
 import Update
 import World
 
@@ -23,11 +22,12 @@ main = do
     let
       continue = null [() | Event { eventPayload = QuitEvent } <- events]
       world' = updateWorld events world
-    renderWorld renderer world'
-    when continue $ go world'
+    world'' <- renderWorld renderer world'
+    when continue $ go world''
 
 initialWorld :: World
 initialWorld = World
-  { playerPos = Chn2 $ V2 3 3
-  , chunk = generateChunk 0
+  { playerChunk = 0
+  , playerPos = 0
+  , chunks = mempty
   }

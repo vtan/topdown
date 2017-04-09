@@ -4,22 +4,33 @@ import Spaces
 
 import Control.Monad.Random
 import Data.Hashable (hash)
+import Data.Map (Map)
 import Data.Set (Set)
 
+import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 
 
 data World = World
-  { playerPos :: Chn2 Int
-  , chunk :: MapChunk
+  { playerChunk :: ChnIdx Int
+  , playerPos :: Chn2 Int
+  , chunks :: Map (ChnIdx Int) MapChunk
   } deriving (Eq, Show)
 
 data MapChunk = MapChunk
   { treeRelPositions :: Set (Chn2 Int)
   } deriving (Eq, Show)
 
-generateChunk :: V2 Int -> MapChunk
+getChunkAt :: ChnIdx Int -> World -> (MapChunk, World)
+getChunkAt i w = case Map.lookup i (chunks w) of
+  Just chunk -> (chunk, w)
+  Nothing ->
+    let chunk = generateChunk i
+        w' = w { chunks = Map.insert i chunk (chunks w) }
+    in (chunk, w')
+
+generateChunk :: ChnIdx Int -> MapChunk
 generateChunk pos = evalRand randomChunk (mkStdGen seed)
   where
     seed = hash pos
