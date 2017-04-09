@@ -37,8 +37,7 @@ generateChunk pos = evalRand randomChunk (mkStdGen seed)
 
 randomChunk :: MonadRandom m => m MapChunk
 randomChunk = do
+  treeDensity <- getRandomR (0 :: Float, 0.3)
+  let treeOnTile _tile = (< treeDensity) <$> getRandom
   trees <- filterM treeOnTile chunkRelPositions
   pure MapChunk { treeRelPositions = Set.fromList trees }
-  where
-    treeOnTile _tile = (< p) <$> getRandom
-    p = 0.1 :: Float
