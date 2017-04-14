@@ -23,19 +23,26 @@ updateWorld events world = foldl' applyKeyPress world keyPresses
       ]
 
 applyKeyPress :: World -> Scancode -> World
-applyKeyPress world scancode = move world
+applyKeyPress world scancode = toggleView . move $ world
   where
-    move = case scancode of
-      ScancodeRight -> movePlayer $ unit _x
-      ScancodeLeft -> movePlayer . negate $ unit _x
-      ScancodeDown -> movePlayer $ unit _y
-      ScancodeUp -> movePlayer . negate $ unit _y
+    move
+      | (mapView world == Local) = case scancode of
+        ScancodeRight -> movePlayer $ unit _x
+        ScancodeLeft -> movePlayer . negate $ unit _x
+        ScancodeDown -> movePlayer $ unit _y
+        ScancodeUp -> movePlayer . negate $ unit _y
+        _ -> id
+      | otherwise = id
+
+    toggleView = case (scancode, mapView world) of
+      (ScancodeTab, Local) -> \w -> w { mapView = Global }
+      (ScancodeTab, Global) -> \w -> w { mapView = Local }
       _ -> id
 
 movePlayer :: Chn2 Int -> World -> World
 movePlayer dir world = flip execState world $ do
-  chunk' <- state $ getChunkAt i'
-  unless (Set.member pos' $ treeRelPositions chunk') $
+  (_, chunkLocal) <- getChunkAt i'
+  unless (Set.member pos' $ treeRelPositions chunkLocal) $
     modify' $ \w -> w { playerChunk = i', playerPos = pos' }
   where
     (i', pos') = normalizeChunkPos (playerChunk world) (playerPos world + dir)

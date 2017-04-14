@@ -16,7 +16,42 @@ renderWorld :: Renderer -> World -> IO World
 renderWorld renderer world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
+  world' <- case mapView world of
+    Global -> renderGlobal renderer world
+    Local -> renderLocal renderer world
+  present renderer
+  pure world'
 
+renderGlobal :: Renderer -> World -> IO World
+renderGlobal renderer world = do
+  let
+    ChnIdx (V2 left top) = chn 0
+    ChnIdx (V2 right bottom) = chn screenSize
+    tiles = [ChnIdx $ V2 x y
+      | x <- [left .. right]
+      , y <- [top .. bottom]
+      ]
+  world' <- flip execStateT world $
+    for_ tiles $ \i -> do
+      (chunkGlobal, _) <- getChunkAt i
+      rendererDrawColor renderer
+        $= floor <$> lerp (treeDensity chunkGlobal) forestColor plainsColor
+      fillRect renderer . Just $ rect i
+
+  rendererDrawColor renderer $= playerColor
+  fillRect renderer . Just $ rect (playerChunk world)
+
+  pure world'
+  where
+    rect p = fromIntegral
+      <$> Rectangle (P . unScr2 $ scr p - halfTile) (unScr2 tileSize)
+    scr = tilesToScr tileSize (playerChunk world) midScr
+    chn = scrToTiles tileSize midScr (playerChunk world)
+    halfTile = (`quot` 2) <$> tileSize
+    midScr = (`quot` 2) <$> screenSize
+
+renderLocal :: Renderer -> World -> IO World
+renderLocal renderer world = do
   let
     Chn2 (V2 left top) = chn 0
     Chn2 (V2 right bottom) = chn screenSize
@@ -27,23 +62,22 @@ renderWorld renderer world = do
   world' <- flip execStateT world $
     for_ tiles $ \pos -> do
       let (i, pos') = normalizeChunkPos (playerChunk world) pos
-      chunk <- state $ getChunkAt i
+      (_, chunkLocal) <- getChunkAt i
       rendererDrawColor renderer $= terrainColor
       fillRect renderer . Just $ rect pos
-      when (Set.member pos' $ treeRelPositions chunk) $ do
+      when (Set.member pos' $ treeRelPositions chunkLocal) $ do
         rendererDrawColor renderer $= treeColor
         fillRect renderer . Just $ rect pos
 
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just $ rect (playerPos world)
 
-  present renderer
   pure world'
   where
     rect p = fromIntegral
       <$> Rectangle (P . unScr2 $ scr p - halfTile) (unScr2 tileSize)
-    scr = chnToScr tileSize (playerPos world) midScr
-    chn = scrToChn tileSize midScr (playerPos world)
+    scr = tilesToScr tileSize (playerPos world) midScr
+    chn = scrToTiles tileSize midScr (playerPos world)
     halfTile = (`quot` 2) <$> tileSize
     midScr = (`quot` 2) <$> screenSize
 
@@ -66,3 +100,9 @@ terrainColor = V4 0 255 0 255
 
 treeColor :: Num a => V4 a
 treeColor = V4 255 127 0 255
+
+plainsColor :: Num a => V4 a
+plainsColor = V4 0 255 0 255
+
+forestColor :: Num a => V4 a
+forestColor = V4 0 31 0 255

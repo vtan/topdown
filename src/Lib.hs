@@ -29,5 +29,7 @@ initialWorld :: World
 initialWorld = World
   { playerChunk = 0
   , playerPos = 0
-  , chunks = mempty
+  , chunkGlobals = mempty
+  , chunkLocals = mempty
+  , mapView = Local
   }
