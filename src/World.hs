@@ -48,6 +48,9 @@ getChunkAt i = do
   where
     (genGlobal, genLocal) = generateChunk i
 
+getPlayerChunk :: MonadState World m => m (ChunkGlobal, ChunkLocal)
+getPlayerChunk = getChunkAt =<< gets playerChunk
+
 generateChunk :: ChnIdx Int -> (ChunkGlobal, ChunkLocal)
 generateChunk pos = evalRand randomChunk (mkStdGen seed)
   where
