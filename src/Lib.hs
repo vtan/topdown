@@ -27,9 +27,9 @@ main = do
 
 initialWorld :: World
 initialWorld = World
-  { playerChunk = 0
-  , playerPos = 0
-  , chunkGlobals = mempty
-  , chunkLocals = mempty
-  , mapView = Local
+  { worldPlayerChunk = 0
+  , worldPlayerPos = 0
+  , worldChunkGlobals = mempty
+  , worldChunkLocals = mempty
+  , worldMapView = Local
   }

@@ -3,9 +3,11 @@
 
 module Update where
 
+import Chunk
 import Spaces
 import World
 
+import Control.Lens
 import Control.Monad.State
 import Data.List (foldl')
 import SDL
@@ -29,34 +31,39 @@ updateWorld events world = foldl' applyKeyPress world keyPresses
 
 applyKeyPress :: World -> Scancode -> World
 applyKeyPress world = \case
-  (scancodeToDir -> Just dir) -> case mapView world of
+  (scancodeToDir -> Just dir) -> case world ^. mapView of
     Global -> movePlayerGlobal (ChnIdx dir) world
     Local -> movePlayerLocal (Chn2 dir) world
   ScancodeTab -> toggleMapView world
   _ -> world
 
 movePlayerGlobal :: ChnIdx Int -> World -> World
-movePlayerGlobal dir world = world { playerChunk = playerChunk world + dir }
+movePlayerGlobal dir world = world & playerChunk +~ dir
 
 movePlayerLocal :: Chn2 Int -> World -> World
 movePlayerLocal dir world = flip execState world $ do
   (_, chunkLocal) <- getChunkAt i'
-  unless (Set.member pos' $ treeRelPositions chunkLocal) $
-    modify' $ \w -> w { playerChunk = i', playerPos = pos' }
+  unless (chunkLocal ^. treeRelPositions . contains pos') $ do
+    playerChunk .= i'
+    playerPos .= pos'
   where
-    (i', pos') = normalizeChunkPos (playerChunk world) (playerPos world + dir)
+    (i', pos') = normalizeChunkPos
+      (world ^. playerChunk)
+      (world ^. playerPos + dir)
 
 toggleMapView :: World -> World
-toggleMapView world = case mapView world of
+toggleMapView world = case world ^. mapView of
   Global ->
     let
       emptyPossInChunk = filter (`Set.notMember` trees) chunkRelPositions
-      trees = treeRelPositions chunkLocal
+      trees = chunkLocal ^. treeRelPositions
       ((_, chunkLocal), world') = runState getPlayerChunk world
     in case emptyPossInChunk of
-      pos:_ -> world' { mapView = Local, playerPos = pos }
+      pos:_ -> world'
+        & mapView .~ Local
+        & playerPos .~ pos
       [] -> world'
-  Local -> world { mapView = Global }
+  Local -> world & mapView .~ Global
 
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
 scancodeToDir = \case
