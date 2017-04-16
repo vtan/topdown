@@ -39,17 +39,16 @@ renderGlobal renderer world = do
       (chunkGlobal, _) <- getChunkAt i
       rendererDrawColor renderer
         $= floor <$> lerp (chunkGlobal ^. treeDensity) forestColor plainsColor
-      fillRect renderer . Just $ rectangleAt tileSize (scr i)
+      fillRect renderer . Just $ tileRectangle tileSize (scr i)
 
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just
-    $ rectangleAt playerSize (world ^. playerChunk . to scr)
+    $ tileRectangle playerSize (world ^. playerChunk . to scr)
 
   pure world'
   where
-    scr = tilesToScr tileSize (world ^. playerChunk) midScr
-    chn = scrToTiles tileSize midScr (world ^. playerChunk)
-    midScr = (`quot` 2) <$> screenSize
+    scr = tilesToScr tileSize (world ^. playerChunk) playerEyeOnScr
+    chn = scrToTiles tileSize playerEyeOnScr (world ^. playerChunk)
 
 renderLocal :: Renderer -> World -> IO World
 renderLocal renderer world = do
@@ -65,40 +64,39 @@ renderLocal renderer world = do
       let (i, pos') = normalizeChunkPos (world ^. playerChunk) pos
       (_, chunkLocal) <- getChunkAt i
       rendererDrawColor renderer $= terrainColor
-      fillRect renderer . Just $ rectangleAt tileSize (scr pos)
-      when (chunkLocal ^. treeRelPositions . contains pos') $ do
+      fillRect renderer . Just $ tileRectangle tileSize (scr pos)
+      when (chunkLocal ^. trees . contains pos') $ do
         rendererDrawColor renderer $= treeColor
-        fillRect renderer . Just $ rectangleAt treeSize (scr pos)
+        fillRect renderer . Just $ tileRectangle treeSize (scr pos)
+      when (chunkLocal ^. arrows . contains pos') $ do
+        rendererDrawColor renderer $= arrowColor
+        fillRect renderer . Just $ tileRectangle arrowSize (scr pos)
 
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just
-    $ rectangleAt playerSize (world ^. playerPos . to scr)
+    $ tileRectangle playerSize (world ^. playerPos . to scr)
 
   pure world'
   where
-    scr = tilesToScr tileSize (world ^. playerPos) midScr
-    chn = scrToTiles tileSize midScr (world ^. playerPos)
-    midScr = (`quot` 2) <$> screenSize
+    scr = tilesToScr tileSize (world ^. playerPos) playerEyeOnScr
+    chn = scrToTiles tileSize playerEyeOnScr (world ^. playerPos)
 
-rectangleAt :: (Integral a, Num b) => Scr2 a -> Scr2 a -> Rectangle b
-rectangleAt size mid = fromIntegral <$> Rectangle topLeft bounds
+tileRectangle :: (Integral a, Num b) => Scr2 a -> Scr2 a -> Rectangle b
+tileRectangle size tileTopLeft = fromIntegral <$> Rectangle rectTopLeft bounds
   where
-    topLeft = P $ unScr2 mid - ((`quot` 2) <$> bounds)
+    rectTopLeft = P . unScr2 $ tileTopLeft + ((`quot` 2) <$> tileSize - size)
     bounds = unScr2 size
 
 
-
-screenSize :: Num a => Scr2 a
-screenSize = Scr2 $ V2 800 600
-
-tileSize :: Num a => Scr2 a
-tileSize = Scr2 $ V2 32 32
 
 playerSize :: Num a => Scr2 a
 playerSize = Scr2 $ V2 20 20
 
 treeSize :: Num a => Scr2 a
 treeSize = Scr2 $ V2 28 28
+
+arrowSize :: Num a => Scr2 a
+arrowSize = Scr2 $ V2 30 4
 
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255
@@ -111,6 +109,9 @@ terrainColor = V4 0 201 0 255
 
 treeColor :: Num a => V4 a
 treeColor = V4 157 93 17 255
+
+arrowColor :: Num a => V4 a
+arrowColor = V4 255 255 255 255
 
 plainsColor :: Num a => V4 a
 plainsColor = V4 0 255 0 255

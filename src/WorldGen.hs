@@ -20,8 +20,11 @@ randomChunk = do
   density <- getRandom
   let probability = 0.2 * density
   let treeOnTile _tile = (< probability) <$> getRandom
-  trees <- filterM treeOnTile chunkRelPositions
+  treePoss <- filterM treeOnTile chunkRelPositions
   pure
     ( ChunkGlobal { chunkGlobalTreeDensity = density }
-    , ChunkLocal { chunkLocalTreeRelPositions = Set.fromList trees }
+    , ChunkLocal
+      { chunkLocalTrees = Set.fromList treePoss
+      , chunkLocalArrows = mempty
+      }
     )

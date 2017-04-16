@@ -10,7 +10,8 @@ import Linear
 
 -- |A vector in screen space
 newtype Scr2 a = Scr2 { unScr2 :: V2 a }
-  deriving (Functor, Applicative, Monad, Additive, Eq, Ord, Num, Hashable, Show)
+  deriving (Functor, Applicative, Monad, Additive, Metric, Eq, Ord, Num,
+    Hashable, Show)
 
 instance R1 Scr2 where _x = lensScr2 . _x
 instance R2 Scr2 where _y = lensScr2 . _y; _xy = lensScr2
@@ -18,13 +19,15 @@ instance R2 Scr2 where _y = lensScr2 . _y; _xy = lensScr2
 -- |A vector in chunk space, i.e. tile coordinates relative to the origin of a
 -- chunk
 newtype Chn2 a = Chn2 { unChn2 :: V2 a }
-  deriving (Functor, Applicative, Monad, Additive, Eq, Ord, Num, Hashable, Show)
+  deriving (Functor, Applicative, Monad, Additive, Metric, Eq, Ord, Num,
+    Hashable, Show)
 
 instance R1 Chn2 where _x = lensChn2 . _x
 instance R2 Chn2 where _y = lensChn2 . _y; _xy = lensChn2
 
 newtype ChnIdx a = ChnIdx { unChnIdx :: V2 a }
-  deriving (Functor, Applicative, Monad, Additive, Eq, Ord, Num, Hashable, Show)
+  deriving (Functor, Applicative, Monad, Additive, Metric, Eq, Ord, Num,
+    Hashable, Show)
 
 instance R1 ChnIdx where _x = lensChnIdx . _x
 instance R2 ChnIdx where _y = lensChnIdx . _y; _xy = lensChnIdx

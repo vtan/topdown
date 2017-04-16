@@ -7,7 +7,7 @@ import Update
 import World
 
 import Control.Monad
-import Data.Function
+import Control.Monad.Random
 import SDL
 
 
@@ -19,9 +19,8 @@ main = do
   renderer <- createRenderer window (-1) defaultRenderer
   flip fix initialWorld $ \go world -> do
     events <- pollEvents
-    let
-      continue = null [() | Event { eventPayload = QuitEvent } <- events]
-      world' = updateWorld events world
+    let continue = null [() | Event { eventPayload = QuitEvent } <- events]
+    world' <- evalRandIO $ updateWorld events world
     world'' <- renderWorld renderer world'
     when continue $ go world''
 
