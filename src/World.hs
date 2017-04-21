@@ -1,24 +1,28 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module World where
 
+import Chunk
 import Spaces
 
-import Control.Lens.TH
-import Data.Map (Map)
-import Data.Set (Set)
+import Control.Lens (Lens', lens)
+import Control.Lens.TH (makeFields)
+import Data.Array (Array, Ix)
 import Linear.V2
+
+import qualified Data.Array as Array
 
 
 
 data World = World
   { worldPlayerChunk :: ChnIdx Int
   , worldPlayerPos :: Chn2 Int
-  , worldChunkGlobals :: Map (ChnIdx Int) ChunkGlobal
-  , worldChunkLocals :: Map (ChnIdx Int) ChunkLocal
+  , worldChunks :: Array (ChnIdx Int) Chunk
   , worldMapView :: MapView
   } deriving (Eq, Show)
 
@@ -27,20 +31,25 @@ data MapView
   | Local
   deriving (Eq, Show)
 
-data ChunkGlobal = ChunkGlobal
-  { chunkGlobalTreeDensity :: Float
-  } deriving (Eq, Show)
-
-data ChunkLocal = ChunkLocal
-  { chunkLocalTrees :: Set (Chn2 Int)
-  , chunkLocalArrows :: Set (Chn2 Int)
-  } deriving (Eq, Show)
-
 makeFields ''World
-makeFields ''ChunkGlobal
-makeFields ''ChunkLocal
 
 
+
+validChunk :: (Num a, Ord a) => ChnIdx a -> Bool
+validChunk i = xInRange && yInRange
+  where
+    ChnIdx (V2 xInRange yInRange) = (&&)
+      <$> ((<=) <$> 0 <*> i)
+      <*> ((<) <$> i <*> worldSize)
+
+arrayAt :: Ix i => i -> Lens' (Array i a) a
+arrayAt i = lens getter setter
+  where
+    getter a = a Array.! i
+    setter a x = a Array.// [(i, x)]
+
+worldSize :: Num a => ChnIdx a
+worldSize = ChnIdx $ V2 20 20
 
 screenSize :: Num a => Scr2 a
 screenSize = Scr2 $ V2 800 600

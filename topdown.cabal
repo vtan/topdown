@@ -17,6 +17,8 @@ library
   hs-source-dirs:      src
   exposed-modules:
     Chunk,
+    ChunkData,
+    ChunkGen,
     Lib,
     Render,
     Spaces
@@ -26,6 +28,7 @@ library
   ghc-options:         -Wall
   build-depends:
     base >= 4.7 && < 5,
+    array,
     containers,
     hashable,
     lens,

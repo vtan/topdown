@@ -1,30 +1,29 @@
+{-# LANGUAGE TupleSections #-}
+
 module WorldGen where
 
-import Spaces
+import Chunk
+import ChunkData
 import World
 
-import Control.Monad.Random
-import Data.Hashable (hash)
+import Control.Monad (forM)
+import Control.Monad.Random (MonadRandom, getRandom)
 
-import qualified Data.Set as Set
+import qualified Data.Array as Array
+import qualified Data.Ix as Ix
 
 
 
-generateChunk :: ChnIdx Int -> (ChunkGlobal, ChunkLocal)
-generateChunk pos = evalRand randomChunk (mkStdGen seed)
-  where
-    seed = hash pos
+generateChunkGlobal :: MonadRandom m => m ChunkGlobal
+generateChunkGlobal = ChunkGlobal <$> getRandom
 
-randomChunk :: MonadRandom m => m (ChunkGlobal, ChunkLocal)
-randomChunk = do
-  density <- getRandom
-  let probability = 0.2 * density
-  let treeOnTile _tile = (< probability) <$> getRandom
-  treePoss <- filterM treeOnTile chunkRelPositions
-  pure
-    ( ChunkGlobal { chunkGlobalTreeDensity = density }
-    , ChunkLocal
-      { chunkLocalTrees = Set.fromList treePoss
-      , chunkLocalArrows = mempty
-      }
-    )
+initialWorld :: MonadRandom m => m World
+initialWorld = do
+  assocs <- forM (Ix.range (0, worldSize - 1)) $ \i ->
+    (i,) . newChunk . ChunkGlobal <$> getRandom
+  pure World
+    { worldPlayerChunk = 0
+    , worldPlayerPos = 0
+    , worldChunks = Array.array (0, worldSize - 1) assocs
+    , worldMapView = Local
+    }
