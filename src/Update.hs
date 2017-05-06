@@ -10,15 +10,17 @@ import ChunkGen
 import Spaces
 import World
 
+import Control.Arrow ((&&&))
 import Control.Lens (_Just, at, contains, set)
 import Control.Lens.Operators
 import Control.Monad.Random (MonadRandom, getRandomR)
 import Data.Foldable (foldlM)
 import Data.Hashable (hash)
 import Data.Ix (range)
-import Data.List (foldl')
+import Data.List (foldl', sort)
 import SDL
 
+import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 
@@ -103,16 +105,31 @@ toggleMapView world = case world ^. mapView of
 loadChunksNearPlayer :: World -> World
 loadChunksNearPlayer world = world
   & loadedChunkLocals %~ (\x -> foldl' load x nearLocals)
+  & unloadFarChunks
   where
     load locals idx = locals & at idx %~ \case
       x@Just{} -> x
       Nothing ->
-        let global = world ^. chunkGlobals . arrayAt idx
+        let global = globals ^. arrayAt idx
             seed = hash idx
         in Just $ generateChunkLocal seed global
+    globals = world ^. chunkGlobals
     nearLocals = filter validChunk
-      $ (+) (world ^. playerChunk) <$> range ((-radius), radius)
-    radius = 1
+      $ (+) (world ^. playerChunk)
+      <$> range ((-chunkLoadRadius), chunkLoadRadius)
+
+unloadFarChunks :: World -> World
+unloadFarChunks world 
+  | noChunksToUnload > 0 = world
+    & loadedChunkLocals %~ (\x -> foldl' (flip Map.delete) x farChunks)
+  | otherwise = world
+  where
+    locals = world ^. loadedChunkLocals
+    noChunksToUnload = Map.size locals - maxLoadedChunks
+    farChunks = map snd . take noChunksToUnload
+      . reverse . sort
+      . map (qd (world ^. playerChunk) &&& id)
+      . Set.toList . Map.keysSet $ locals
 
 shootArrow :: MonadRandom m => Chn2 Int -> World -> m World
 shootArrow target world
@@ -149,3 +166,11 @@ scancodeToDir = \case
   ScancodeDown -> Just $ unit _y
   ScancodeUp -> Just . negate $ unit _y
   _ -> Nothing
+
+
+
+chunkLoadRadius :: Num a => a
+chunkLoadRadius = 3
+
+maxLoadedChunks :: Int
+maxLoadedChunks = 2 * (2 * chunkLoadRadius + 1) ^ (2 :: Int)
