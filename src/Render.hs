@@ -4,7 +4,7 @@ import ChunkData
 import Spaces
 import World
 
-import Control.Lens (at, contains, to)
+import Control.Lens (_Just, at, contains, has, to)
 import Control.Lens.Operators
 import Control.Monad (when)
 import Data.Foldable (for_)
@@ -33,11 +33,14 @@ renderGlobal renderer world = do
       , y <- [top .. bottom]
       ]
   for_ tiles $ \i -> do
-    let color = floor <$> lerp
-          (world ^. chunkGlobals . arrayAt i . treeDensity)
-          forestColor plainsColor
+    let global = world ^. chunkGlobals . arrayAt i
+        color = floor <$> lerp (global ^. treeDensity) forestColor plainsColor
+        scri = scr i
     rendererDrawColor renderer $= color
-    fillRect renderer . Just $ tileRectangle tileSize (scr i)
+    fillRect renderer . Just $ tileRectangle tileSize scri
+    when (has (loadedChunkLocals . at i . _Just) world) $ do
+      rendererDrawColor renderer $= 255
+      drawRect renderer . Just $ tileRectangle 3 scri
 
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just
