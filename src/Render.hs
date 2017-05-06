@@ -1,32 +1,29 @@
 module Render (renderWorld) where
 
-import Chunk
 import ChunkData
 import Spaces
 import World
 
-import Control.Lens (contains, to, zoom)
+import Control.Lens (at, contains, to)
 import Control.Lens.Operators
 import Control.Monad (when)
-import Control.Monad.State (execStateT)
 import Data.Foldable (for_)
 import SDL
 
 
 
-renderWorld :: Renderer -> World -> IO World
+renderWorld :: Renderer -> World -> IO ()
 renderWorld renderer world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
-  world' <- case world ^. mapView of
+  case world ^. mapView of
     Global -> renderGlobal renderer world
     Local -> renderLocal renderer world
   present renderer
-  pure world'
 
 
 
-renderGlobal :: Renderer -> World -> IO World
+renderGlobal :: Renderer -> World -> IO ()
 renderGlobal renderer world = do
   let
     ChnIdx (V2 left top) = chn 0
@@ -37,7 +34,7 @@ renderGlobal renderer world = do
       ]
   for_ tiles $ \i -> do
     let color = floor <$> lerp
-          (world ^. chunks . arrayAt i . to chunkGlobal . treeDensity)
+          (world ^. chunkGlobals . arrayAt i . treeDensity)
           forestColor plainsColor
     rendererDrawColor renderer $= color
     fillRect renderer . Just $ tileRectangle tileSize (scr i)
@@ -45,13 +42,11 @@ renderGlobal renderer world = do
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just
     $ tileRectangle playerSize (world ^. playerChunk . to scr)
-
-  pure world
   where
     scr = tilesToScr tileSize (world ^. playerChunk) playerEyeOnScr
     chn = scrToTiles tileSize playerEyeOnScr (world ^. playerChunk)
 
-renderLocal :: Renderer -> World -> IO World
+renderLocal :: Renderer -> World -> IO ()
 renderLocal renderer world = do
   let
     Chn2 (V2 left top) = chn 0
@@ -60,11 +55,10 @@ renderLocal renderer world = do
       | x <- [left .. right]
       , y <- [top .. bottom]
       ]
-  world' <- flip execStateT world $
-    for_ tiles $ \pos -> do
-      let (i, pos') = normalizeChunkPos (world ^. playerChunk) pos
-      when (validChunk i) $ do
-        chunkLocal <- zoom (chunks . arrayAt i) $ getChunkLocal i
+  for_ tiles $ \pos -> do
+    let (i, pos') = normalizeChunkPos (world ^. playerChunk) pos
+    case world ^. loadedChunkLocals . at i of
+      Just chunkLocal -> do
         rendererDrawColor renderer $= terrainColor
         fillRect renderer . Just $ tileRectangle tileSize (scr pos)
         when (chunkLocal ^. trees . contains pos') $ do
@@ -73,12 +67,11 @@ renderLocal renderer world = do
         when (chunkLocal ^. arrows . contains pos') $ do
           rendererDrawColor renderer $= arrowColor
           fillRect renderer . Just $ tileRectangle arrowSize (scr pos)
+      Nothing -> pure ()
 
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just
     $ tileRectangle playerSize (world ^. playerPos . to scr)
-
-  pure world'
   where
     scr = tilesToScr tileSize (world ^. playerPos) playerEyeOnScr
     chn = scrToTiles tileSize playerEyeOnScr (world ^. playerPos)

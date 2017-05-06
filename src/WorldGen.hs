@@ -2,7 +2,6 @@
 
 module WorldGen where
 
-import Chunk
 import ChunkData
 import World
 
@@ -20,10 +19,11 @@ generateChunkGlobal = ChunkGlobal <$> getRandom
 initialWorld :: MonadRandom m => m World
 initialWorld = do
   assocs <- forM (Ix.range (0, worldSize - 1)) $ \i ->
-    (i,) . newChunk . ChunkGlobal <$> getRandom
+    (i,) . ChunkGlobal <$> getRandom
   pure World
     { worldPlayerChunk = 0
     , worldPlayerPos = 0
-    , worldChunks = Array.array (0, worldSize - 1) assocs
+    , worldChunkGlobals = Array.array (0, worldSize - 1) assocs
+    , worldLoadedChunkLocals = mempty
     , worldMapView = Local
     }

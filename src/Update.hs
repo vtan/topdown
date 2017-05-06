@@ -1,19 +1,22 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Update where
 
-import Chunk
 import ChunkData
+import ChunkGen
 import Spaces
 import World
 
-import Control.Lens (contains, zoom)
+import Control.Lens (_Just, at, contains, set)
 import Control.Lens.Operators
-import Control.Monad (unless, when)
 import Control.Monad.Random (MonadRandom, getRandomR)
-import Control.Monad.State (execState, execStateT)
 import Data.Foldable (foldlM)
+import Data.Hashable (hash)
+import Data.Ix (range)
+import Data.List (foldl')
 import SDL
 
 import qualified Data.Set as Set
@@ -61,19 +64,20 @@ applyMouseClick world posScr = case world ^. mapView of
 
 movePlayerGlobal :: ChnIdx Int -> World -> World
 movePlayerGlobal dir world
-  | validChunk i' = world & playerChunk .~ i'
+  | validChunk i' = world
+    & playerChunk .~ i'
+    & loadChunksNearPlayer
   | otherwise = world
   where
     i' = (world ^. playerChunk) + dir
 
 movePlayerLocal :: Chn2 Int -> World -> World
-movePlayerLocal dir world
-  | validChunk i' = flip execState world $ do
-    chunkLocal <- zoom (chunks . arrayAt i') $ getChunkLocal i'
-    unless (chunkLocal ^. trees . contains pos') $ do
-      playerChunk .= i'
-      playerPos .= pos'
-  | otherwise = world
+movePlayerLocal dir world = case world ^. loadedChunkLocals . at i' of
+  Just chunkLocal | not (chunkLocal ^. trees . contains pos') -> world
+    & set playerChunk i'
+    & set playerPos pos'
+    & loadChunksNearPlayer
+  _ -> world
   where
     (i', pos') = normalizeChunkPos
       (world ^. playerChunk)
@@ -81,26 +85,43 @@ movePlayerLocal dir world
 
 toggleMapView :: World -> World
 toggleMapView world = case world ^. mapView of
-  Global -> flip execState world $ do
+  Global ->
     let i = world ^. playerChunk
-    chunkLocal <- zoom (chunks . arrayAt i) $ getChunkLocal i
-    let noTrees = (`Set.notMember` (chunkLocal ^. trees))
-        emptyPossInChunk = filter noTrees chunkRelPositions
-    case emptyPossInChunk of
-      pos:_ -> do
-        mapView .= Local
-        playerPos .= pos
-      [] -> pure ()
+    in case world ^. loadedChunkLocals . at i of
+      Just chunkLocal ->
+        let noTrees = (`Set.notMember` (chunkLocal ^. trees))
+            emptyPossInChunk = filter noTrees chunkRelPositions
+        in case emptyPossInChunk of
+          pos:_ -> world
+            & mapView .~ Local
+            & playerPos .~ pos
+          [] -> world
+      Nothing ->
+        world
   Local -> world & mapView .~ Global
+
+loadChunksNearPlayer :: World -> World
+loadChunksNearPlayer world = world
+  & loadedChunkLocals %~ (\x -> foldl' load x nearLocals)
+  where
+    load locals idx = locals & at idx %~ \case
+      x@Just{} -> x
+      Nothing ->
+        let global = world ^. chunkGlobals . arrayAt idx
+            seed = hash idx
+        in Just $ generateChunkLocal seed global
+    nearLocals = filter validChunk
+      $ (+) (world ^. playerChunk) <$> range ((-radius), radius)
+    radius = 1
 
 shootArrow :: MonadRandom m => Chn2 Int -> World -> m World
 shootArrow target world
-  | dist >= 1.0 && dist <= maxDist
-    = flip execStateT world $ do
-      arrow <- (source +) <$> deviatedArrow dist dir
-      let (arrowIdx, arrowChn) = normalizeChunkPos (world ^. playerChunk) arrow
-      when (validChunk arrowIdx) $ do
-        zoom (chunks . arrayAt arrowIdx) $ addChunkLocalArrow arrowIdx arrowChn
+  | dist >= 1.0 && dist <= maxDist = do
+    arrow <- (source +) <$> deviatedArrow dist dir
+    let (arrowIdx, arrowChn) = normalizeChunkPos (world ^. playerChunk) arrow
+    pure $ world
+      & loadedChunkLocals . at arrowIdx . _Just
+      . arrows . contains arrowChn .~ True
   | otherwise = pure world
   where
     dist = sqrt $ quadrance playerToTarget

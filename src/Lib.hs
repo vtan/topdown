@@ -18,10 +18,10 @@ main = do
   initializeAll
   window <- createWindow "topdown" defaultWindow
   renderer <- createRenderer window (-1) defaultRenderer
-  world0 <- evalRandIO initialWorld
+  world0 <- loadChunksNearPlayer <$> evalRandIO initialWorld
   flip fix world0 $ \go world -> do
     events <- pollEvents
     let continue = null [() | Event { eventPayload = QuitEvent } <- events]
     world' <- evalRandIO $ updateWorld events world
-    world'' <- renderWorld renderer world'
-    when continue $ go world''
+    renderWorld renderer world'
+    when continue $ go world'

@@ -7,12 +7,13 @@
 
 module World where
 
-import Chunk
+import ChunkData
 import Spaces
 
 import Control.Lens (Lens', lens)
 import Control.Lens.TH (makeFields)
 import Data.Array (Array, Ix)
+import Data.Map (Map)
 import Linear.V2
 
 import qualified Data.Array as Array
@@ -22,7 +23,8 @@ import qualified Data.Array as Array
 data World = World
   { worldPlayerChunk :: ChnIdx Int
   , worldPlayerPos :: Chn2 Int
-  , worldChunks :: Array (ChnIdx Int) Chunk
+  , worldChunkGlobals :: Array (ChnIdx Int) ChunkGlobal
+  , worldLoadedChunkLocals :: Map (ChnIdx Int) ChunkLocal
   , worldMapView :: MapView
   } deriving (Eq, Show)
 
