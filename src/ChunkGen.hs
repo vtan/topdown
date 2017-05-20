@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 module ChunkGen where
 
 import ChunkData
@@ -7,7 +9,7 @@ import Control.Lens.Operators
 import Control.Monad (filterM)
 import Control.Monad.Random (evalRand, getRandom, mkStdGen)
 
-import qualified Data.Set as Set
+import qualified Data.Map as Map
 
 
 
@@ -17,6 +19,5 @@ generateChunkLocal seed global = flip evalRand (mkStdGen seed) $ do
       treeOnTile _tile = (< probability) <$> getRandom
   randomTrees <- filterM treeOnTile chunkRelPositions
   pure ChunkLocal
-    { chunkLocalTrees = Set.fromList randomTrees
-    , chunkLocalArrows = mempty
+    { chunkLocalObjects = Map.fromList . map (, [Tree]) $ randomTrees
     }

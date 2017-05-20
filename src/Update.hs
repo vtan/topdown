@@ -11,7 +11,7 @@ import Spaces
 import World
 
 import Control.Arrow ((&&&))
-import Control.Lens (_Just, at, contains, set)
+import Control.Lens (_Just, at, set)
 import Control.Lens.Operators
 import Control.Monad.Random (MonadRandom, getRandomR)
 import Data.Foldable (foldlM)
@@ -75,7 +75,7 @@ movePlayerGlobal dir world
 
 movePlayerLocal :: Chn2 Int -> World -> World
 movePlayerLocal dir world = case world ^. loadedChunkLocals . at i' of
-  Just chunkLocal | not (chunkLocal ^. trees . contains pos') -> world
+  Just chunkLocal | passableTile chunkLocal pos' -> world
     & set playerChunk i'
     & set playerPos pos'
     & loadChunksNearPlayer
@@ -91,9 +91,8 @@ toggleMapView world = case world ^. mapView of
     let i = world ^. playerChunk
     in case world ^. loadedChunkLocals . at i of
       Just chunkLocal ->
-        let noTrees = (`Set.notMember` (chunkLocal ^. trees))
-            emptyPossInChunk = filter noTrees chunkRelPositions
-        in case emptyPossInChunk of
+        let passableTiles = filter (passableTile chunkLocal) chunkRelPositions
+        in case passableTiles of
           pos:_ -> world
             & mapView .~ Local
             & playerPos .~ pos
@@ -138,7 +137,9 @@ shootArrow target world
     let (arrowIdx, arrowChn) = normalizeChunkPos (world ^. playerChunk) arrow
     pure $ world
       & loadedChunkLocals . at arrowIdx . _Just
-      . arrows . contains arrowChn .~ True
+      . objects . at arrowChn %~ \case
+        Just objs -> Just $ objs ++ [Arrow]
+        Nothing -> Just [Arrow]
   | otherwise = pure world
   where
     dist = sqrt $ quadrance playerToTarget
@@ -166,6 +167,15 @@ scancodeToDir = \case
   ScancodeDown -> Just $ unit _y
   ScancodeUp -> Just . negate $ unit _y
   _ -> Nothing
+
+passableTile :: ChunkLocal -> Chn2 Int -> Bool
+passableTile cl p = null . filter (not . passable)
+  $ cl ^. objects . at p . _Just
+
+passable :: Object -> Bool
+passable = \case
+  Tree -> False
+  Arrow -> True
 
 
 

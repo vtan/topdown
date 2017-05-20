@@ -4,7 +4,7 @@ import ChunkData
 import Spaces
 import World
 
-import Control.Lens (_Just, at, contains, has, to)
+import Control.Lens (_Just, at, has, to, traversed)
 import Control.Lens.Operators
 import Control.Monad (when)
 import Data.Foldable (for_)
@@ -64,12 +64,8 @@ renderLocal renderer world = do
       Just chunkLocal -> do
         rendererDrawColor renderer $= terrainColor
         fillRect renderer . Just $ tileRectangle tileSize (scr pos)
-        when (chunkLocal ^. trees . contains pos') $ do
-          rendererDrawColor renderer $= treeColor
-          fillRect renderer . Just $ tileRectangle treeSize (scr pos)
-        when (chunkLocal ^. arrows . contains pos') $ do
-          rendererDrawColor renderer $= arrowColor
-          fillRect renderer . Just $ tileRectangle arrowSize (scr pos)
+        for_ (chunkLocal ^. objects . at pos' . traversed) $
+          renderObject renderer (scr pos)
       Nothing -> pure ()
 
   rendererDrawColor renderer $= playerColor
@@ -78,6 +74,15 @@ renderLocal renderer world = do
   where
     scr = tilesToScr tileSize (world ^. playerPos) playerEyeOnScr
     chn = scrToTiles tileSize playerEyeOnScr (world ^. playerPos)
+
+renderObject :: Integral a => Renderer -> Scr2 a -> Object -> IO ()
+renderObject renderer pos object = do
+  rendererDrawColor renderer $= color
+  fillRect renderer . Just $ tileRectangle size pos
+  where
+    (color, size) = case object of
+      Tree -> (treeColor, treeSize)
+      Arrow -> (arrowColor, arrowSize)
 
 tileRectangle :: (Integral a, Num b) => Scr2 a -> Scr2 a -> Rectangle b
 tileRectangle size tileTopLeft = fromIntegral <$> Rectangle rectTopLeft bounds

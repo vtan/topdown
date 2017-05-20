@@ -8,7 +8,7 @@ module ChunkData where
 import Spaces
 
 import Control.Lens.TH (makeFields)
-import Data.Set (Set)
+import Data.Map (Map)
 
 
 
@@ -17,9 +17,13 @@ data ChunkGlobal = ChunkGlobal
   } deriving (Eq, Show)
 
 data ChunkLocal = ChunkLocal
-  { chunkLocalTrees :: Set (Chn2 Int)
-  , chunkLocalArrows :: Set (Chn2 Int)
+  { chunkLocalObjects :: Map (Chn2 Int) [Object]
   } deriving (Eq, Show)
+
+data Object
+  = Tree
+  | Arrow
+  deriving (Eq, Show)
 
 makeFields ''ChunkGlobal
 makeFields ''ChunkLocal
