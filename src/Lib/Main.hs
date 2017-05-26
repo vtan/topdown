@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lib (main) where
+module Lib.Main (main) where
 
-import Render
-import Update
-import WorldGen
+import Lib.Render
+import Lib.Update
+import Lib.WorldGen
 
 import Control.Monad (when)
 import Control.Monad.Random (evalRandIO)

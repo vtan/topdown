@@ -3,12 +3,12 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Update where
+module Lib.Update where
 
-import ChunkData
-import ChunkGen
-import Spaces
-import World
+import Lib.ChunkData
+import Lib.ChunkGen
+import Lib.Spaces
+import Lib.World
 
 import Control.Arrow ((&&&))
 import Control.Lens (_Just, at, set)

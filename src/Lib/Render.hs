@@ -1,8 +1,8 @@
-module Render (renderWorld) where
+module Lib.Render (renderWorld) where
 
-import ChunkData
-import Spaces
-import World
+import Lib.ChunkData
+import Lib.Spaces
+import Lib.World
 
 import Control.Lens (_Just, at, has, to, traversed)
 import Control.Lens.Operators

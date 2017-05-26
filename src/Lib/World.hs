@@ -5,10 +5,10 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module World where
+module Lib.World where
 
-import ChunkData
-import Spaces
+import Lib.ChunkData
+import Lib.Spaces
 
 import Control.Lens (Lens', lens)
 import Control.Lens.TH (makeFields)

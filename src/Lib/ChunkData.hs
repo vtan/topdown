@@ -3,9 +3,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module ChunkData where
+module Lib.ChunkData where
 
-import Spaces
+import Lib.Spaces
 
 import Control.Lens.TH (makeFields)
 import Data.Map (Map)

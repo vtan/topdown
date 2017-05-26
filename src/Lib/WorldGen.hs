@@ -1,9 +1,9 @@
 {-# LANGUAGE TupleSections #-}
 
-module WorldGen where
+module Lib.WorldGen where
 
-import ChunkData
-import World
+import Lib.ChunkData
+import Lib.World
 
 import Control.Monad (forM)
 import Control.Monad.Random (MonadRandom, getRandom)

@@ -16,14 +16,14 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:
-    ChunkData,
-    ChunkGen,
-    Lib,
-    Render,
-    Spaces
-    Update,
-    World,
-    WorldGen
+    Lib.ChunkData,
+    Lib.ChunkGen,
+    Lib.Main,
+    Lib.Render,
+    Lib.Spaces
+    Lib.Update,
+    Lib.World,
+    Lib.WorldGen
   ghc-options:         -Wall
   build-depends:
     base >= 4.7 && < 5,

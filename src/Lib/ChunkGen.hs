@@ -1,9 +1,9 @@
 {-# LANGUAGE TupleSections #-}
 
-module ChunkGen where
+module Lib.ChunkGen where
 
-import ChunkData
-import Spaces
+import Lib.ChunkData
+import Lib.Spaces
 
 import Control.Lens.Operators
 import Control.Monad (filterM)

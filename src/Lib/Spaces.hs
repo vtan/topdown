@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Spaces where
+module Lib.Spaces where
 
 import Control.Lens (Lens', lens)
 import Control.Lens.Operators
