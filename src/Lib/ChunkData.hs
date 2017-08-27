@@ -14,7 +14,7 @@ data ChunkGlobal = ChunkGlobal
   } deriving (Eq, Show)
 
 data ChunkLocal = ChunkLocal
-  { chunkLocalObjects :: Map (Chn2 Int) [Object]
+  { chunkLocalObjects :: Map (InChunkV Int) [Object]
   } deriving (Eq, Show)
 
 data Object

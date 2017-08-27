@@ -26,9 +26,9 @@ renderWorld renderer world = do
 renderGlobal :: Renderer -> World -> IO ()
 renderGlobal renderer world = do
   let
-    ChnIdx (V2 left top) = chn 0
-    ChnIdx (V2 right bottom) = chn screenSize
-    tiles = filter validChunk [ChnIdx $ V2 x y
+    ChunkV (V2 left top) = chn 0
+    ChunkV (V2 right bottom) = chn screenSize
+    tiles = filter validChunk [chunkV x y
       | x <- [left .. right]
       , y <- [top .. bottom]
       ]
@@ -52,9 +52,9 @@ renderGlobal renderer world = do
 renderLocal :: Renderer -> World -> IO ()
 renderLocal renderer world = do
   let
-    Chn2 (V2 left top) = chn 0
-    Chn2 (V2 right bottom) = chn screenSize
-    tiles = [Chn2 $ V2 x y
+    InChunkV (V2 left top) = chn 0
+    InChunkV (V2 right bottom) = chn screenSize
+    tiles = [inChunkV x y
       | x <- [left .. right]
       , y <- [top .. bottom]
       ]
@@ -75,7 +75,7 @@ renderLocal renderer world = do
     scr = tilesToScr tileSize (world ^. playerPos) playerEyeOnScr
     chn = scrToTiles tileSize playerEyeOnScr (world ^. playerPos)
 
-renderObject :: Integral a => Renderer -> Scr2 a -> Object -> IO ()
+renderObject :: Integral a => Renderer -> ScreenV a -> Object -> IO ()
 renderObject renderer pos object = do
   rendererDrawColor renderer $= color
   fillRect renderer . Just $ tileRectangle size pos
@@ -84,22 +84,22 @@ renderObject renderer pos object = do
       Tree -> (treeColor, treeSize)
       Arrow -> (arrowColor, arrowSize)
 
-tileRectangle :: (Integral a, Num b) => Scr2 a -> Scr2 a -> Rectangle b
+tileRectangle :: (Integral a, Num b) => ScreenV a -> ScreenV a -> Rectangle b
 tileRectangle size tileTopLeft = fromIntegral <$> Rectangle rectTopLeft bounds
   where
-    rectTopLeft = P . unScr2 $ tileTopLeft + ((`quot` 2) <$> tileSize - size)
-    bounds = unScr2 size
+    rectTopLeft = P . unScreenV $ tileTopLeft + ((`quot` 2) <$> tileSize - size)
+    bounds = unScreenV size
 
 
 
-playerSize :: Num a => Scr2 a
-playerSize = Scr2 $ V2 20 20
+playerSize :: Num a => ScreenV a
+playerSize = screenV 20 20
 
-treeSize :: Num a => Scr2 a
-treeSize = Scr2 $ V2 28 28
+treeSize :: Num a => ScreenV a
+treeSize = screenV 28 28
 
-arrowSize :: Num a => Scr2 a
-arrowSize = Scr2 $ V2 30 4
+arrowSize :: Num a => ScreenV a
+arrowSize = screenV 30 4
 
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255
