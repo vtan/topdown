@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Lib.Main (main) where
 
 import Lib.Render
@@ -9,6 +7,7 @@ import Lib.WorldGen
 import Control.Monad (when)
 import Control.Monad.Random (evalRandIO)
 import Data.Function (fix)
+import Data.String (fromString)
 import SDL
 
 
@@ -16,7 +15,7 @@ import SDL
 main :: IO ()
 main = do
   initializeAll
-  window <- createWindow "topdown" defaultWindow
+  window <- createWindow (fromString "topdown") defaultWindow
   renderer <- createRenderer window (-1) defaultRenderer
   world0 <- loadChunksNearPlayer <$> evalRandIO initialWorld
   flip fix world0 $ \go world -> do

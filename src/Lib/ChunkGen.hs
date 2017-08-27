@@ -1,5 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-
 module Lib.ChunkGen where
 
 import Lib.ChunkData

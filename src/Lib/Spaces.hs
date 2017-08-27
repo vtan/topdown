@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Lib.Spaces where
 
 import Control.Lens (Lens', lens)

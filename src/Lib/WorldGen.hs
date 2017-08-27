@@ -1,5 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-
 module Lib.WorldGen where
 
 import Lib.ChunkData
