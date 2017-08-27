@@ -4,8 +4,7 @@ import Lib.ChunkData
 import Lib.Spaces
 import Lib.World
 
-import Control.Lens (_Just, at, has, to, traversed)
-import Control.Lens.Operators
+import Control.Lens
 import Control.Monad (when)
 import Data.Foldable (for_)
 import SDL
@@ -35,7 +34,7 @@ renderGlobal renderer world = do
   for_ tiles $ \i -> do
     let global = world ^. chunkGlobals . arrayAt i
         color = floor <$> lerp (global ^. treeDensity) forestColor plainsColor
-        scri = scr i
+        scri = scr . TileV . unChunkV $ i
     rendererDrawColor renderer $= color
     fillRect renderer . Just $ tileRectangle tileSize scri
     when (has (loadedChunkLocals . at i . _Just) world) $ do
@@ -44,10 +43,10 @@ renderGlobal renderer world = do
 
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just
-    $ tileRectangle playerSize (world ^. playerChunk . to scr)
+    $ tileRectangle playerSize (world ^. playerChunk . tiledChunk . to scr)
   where
-    scr = tilesToScr tileSize (world ^. playerChunk) playerEyeOnScr
-    chn = scrToTiles tileSize playerEyeOnScr (world ^. playerChunk)
+    scr = tilesToScr tileSize (world ^. playerChunk . tiledChunk) playerEyeOnScr
+    chn = view (from tiledChunk) . scrToTiles tileSize playerEyeOnScr (world ^. playerChunk . tiledChunk)
 
 renderLocal :: Renderer -> World -> IO ()
 renderLocal renderer world = do
@@ -63,17 +62,17 @@ renderLocal renderer world = do
     case world ^. loadedChunkLocals . at i of
       Just chunkLocal -> do
         rendererDrawColor renderer $= terrainColor
-        fillRect renderer . Just $ tileRectangle tileSize (scr pos)
+        fillRect renderer . Just $ tileRectangle tileSize (scr . view tiledInChunk $ pos)
         for_ (chunkLocal ^. objects . at pos' . traversed) $
-          renderObject renderer (scr pos)
+          renderObject renderer (scr . view tiledInChunk $ pos)
       Nothing -> pure ()
 
   rendererDrawColor renderer $= playerColor
   fillRect renderer . Just
-    $ tileRectangle playerSize (world ^. playerPos . to scr)
+    $ tileRectangle playerSize (world ^. playerPos . tiledInChunk . to scr)
   where
-    scr = tilesToScr tileSize (world ^. playerPos) playerEyeOnScr
-    chn = scrToTiles tileSize playerEyeOnScr (world ^. playerPos)
+    scr = tilesToScr tileSize (world ^. playerPos . tiledInChunk) playerEyeOnScr
+    chn = view (from tiledInChunk) . scrToTiles tileSize playerEyeOnScr (world ^. playerPos . tiledInChunk)
 
 renderObject :: Integral a => Renderer -> ScreenV a -> Object -> IO ()
 renderObject renderer pos object = do

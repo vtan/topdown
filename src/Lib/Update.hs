@@ -6,8 +6,7 @@ import Lib.Spaces
 import Lib.World
 
 import Control.Arrow ((&&&))
-import Control.Lens (_Just, at, set)
-import Control.Lens.Operators
+import Control.Lens
 import Control.Monad.Random (MonadRandom, getRandomR)
 import Data.Foldable (foldlM)
 import Data.Hashable (hash)
@@ -56,7 +55,7 @@ applyMouseClick world posScr = case world ^. mapView of
   Global -> pure world
   Local -> shootArrow posChn world
   where
-    posChn = scrToTiles tileSize eyeScr (world ^. playerPos) posScr
+    posChn = view (from tiledInChunk) $ scrToTiles tileSize eyeScr (world ^. playerPos . tiledInChunk) posScr
     eyeScr = (`quot` 2) <$> screenSize - tileSize
 
 movePlayerGlobal :: ChunkV Int -> World -> World
