@@ -23,6 +23,7 @@ library
     Lib.Scene,
     Lib.Spaces
     Lib.Update,
+    Lib.Util,
     Lib.World,
     Lib.WorldGen
   ghc-options:         -Wall

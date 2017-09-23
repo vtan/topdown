@@ -3,8 +3,10 @@ module Lib.Scene
 where
 
 import Lib.Spaces
+import Lib.Util
 
 import Control.Lens
+import Control.Monad.Zip
 import Data.Foldable
 import Data.Word
 import Linear
@@ -16,7 +18,7 @@ import qualified SDL as Sdl
 
 
 newtype Scene v a = Scene [Elem v a]
-  deriving (Monoid)
+  deriving (Monoid, Eq, Show)
 
 data Elem v a
   = Rectangle
@@ -24,18 +26,21 @@ data Elem v a
     , _maxCorner :: v a
     , _color :: Color
     }
+  deriving (Eq, Show)
 
 data Color
   = Solid (V3 Word8)
   | Outline (V3 Word8)
+  deriving (Eq, Show)
 
 
 
-vmap :: (u a -> v a) -> Scene u a -> Scene v a
+vmap :: (MonadZip v, Ord a) => (u a -> v a) -> Scene u a -> Scene v a
 vmap f (Scene elems) = Scene $ map vmap' elems
   where
     vmap' (Rectangle minCorner maxCorner color) =
-      Rectangle (f minCorner) (f maxCorner) color
+      let (minCorner', maxCorner') = minMaxZip (f minCorner) (f maxCorner)
+      in Rectangle minCorner' maxCorner' color
 
 tileCenteredRectangle :: (IsTileV t, Fractional a)
   => t Int -> t a -> Color -> Scene t a
@@ -59,5 +64,5 @@ renderElem renderer (Rectangle minCorner maxCorner coloring) =
       Sdl.drawRect renderer $ sdlRect minCorner maxCorner
   where
     setColor color = Sdl.rendererDrawColor renderer $= (_xyz .~ color $ 255)
-    sdlRect (v2 -> mi) (v2 -> ma) = Just $ Sdl.Rectangle (P mi) (ma ^-^ mi)
+    sdlRect mi ma = Just $ Sdl.Rectangle (P $ v2 mi) (v2 $ ma ^-^ mi)
     v2 = fmap floor . view _V2

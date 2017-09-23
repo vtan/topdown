@@ -3,12 +3,12 @@ module Lib.Render (renderWorld) where
 import Lib.ChunkData
 import Lib.Scene (Scene)
 import Lib.Spaces
+import Lib.Util
 import Lib.World
 
 import qualified Lib.Scene as Scene
 
 import Control.Lens
-import Data.Ix
 import Data.Monoid
 import SDL
 
@@ -31,7 +31,7 @@ globalScene world =
   Scene.vmap (globalTileToScreen world)
   $ globalTiles visibleTiles world
   where
-    visibleTiles = range (topLeft, bottomRight)
+    visibleTiles = rangeZip (topLeft, bottomRight)
     topLeft = screenToGlobalTile world 0
     bottomRight = screenToGlobalTile world screenSize
 
@@ -40,7 +40,7 @@ localScene world =
   Scene.vmap (localTileToScreen world)
   $ localTiles visibleTiles world
   where
-    visibleTiles = range (topLeft, bottomRight)
+    visibleTiles = rangeZip (topLeft, bottomRight)
     topLeft = screenToLocalTile world 0
     bottomRight = screenToLocalTile world screenSize
 

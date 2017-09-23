@@ -158,8 +158,8 @@ scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
 scancodeToDir = \case
   ScancodeRight -> Just $ unit _x
   ScancodeLeft -> Just . negate $ unit _x
-  ScancodeDown -> Just $ unit _y
-  ScancodeUp -> Just . negate $ unit _y
+  ScancodeUp -> Just $ unit _y
+  ScancodeDown -> Just . negate $ unit _y
   _ -> Nothing
 
 passableTile :: ChunkLocal -> InChunkV Int -> Bool
