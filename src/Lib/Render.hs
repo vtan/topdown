@@ -8,9 +8,8 @@ import Lib.World
 import qualified Lib.Scene as Scene
 
 import Control.Lens
-import Control.Monad (when)
-import Data.Foldable (for_)
 import Data.Ix
+import Data.Monoid
 import SDL
 
 
@@ -19,9 +18,10 @@ renderWorld :: Renderer -> World -> IO ()
 renderWorld renderer world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
-  case world ^. mapView of
-    Global -> Scene.render renderer $ globalScene world
-    Local -> renderLocal renderer world
+  let scene = case world ^. mapView of
+        Global -> globalScene world
+        Local -> localScene world
+  Scene.render renderer scene
   present renderer
 
 
@@ -35,35 +35,67 @@ globalScene world =
     topLeft = screenToGlobalTile world 0
     bottomRight = screenToGlobalTile world screenSize
 
-globalTiles :: [ChunkV Int] -> World -> Scene ChunkV Double
-globalTiles visibleTiles world =
-  Scene.tileCenteredRectangle 0 1 (Scene.Solid 255)
-
-renderGlobal :: Renderer -> World -> IO ()
-renderGlobal renderer world = do
-  let
-    ChunkV (V2 left top) = chn 0
-    ChunkV (V2 right bottom) = chn screenSize
-    tiles = filter validChunk [chunkV x y
-      | x <- [left .. right]
-      , y <- [top .. bottom]
-      ]
-  for_ tiles $ \i -> do
-    let global = world ^. chunkGlobals . arrayAt i
-        color = floor <$> lerp (global ^. treeDensity) forestColor plainsColor
-        scri = scr . TileV . unChunkV $ i
-    rendererDrawColor renderer $= color
-    fillRect renderer . Just $ tileRectangle tileSize scri
-    when (has (loadedChunkLocals . at i . _Just) world) $ do
-      rendererDrawColor renderer $= 255
-      drawRect renderer . Just $ tileRectangle 3 scri
-
-  rendererDrawColor renderer $= playerColor
-  fillRect renderer . Just
-    $ tileRectangle playerSize (world ^. playerChunk . _TileV . to scr)
+localScene :: World -> Scene ScreenV Double
+localScene world =
+  Scene.vmap (localTileToScreen world)
+  $ localTiles visibleTiles world
   where
-    scr = tilesToScr tileSize (world ^. playerChunk . _TileV) playerEyeOnScr
-    chn = view (from _TileV) . scrToTiles tileSize playerEyeOnScr (world ^. playerChunk . _TileV)
+    visibleTiles = range (topLeft, bottomRight)
+    topLeft = screenToLocalTile world 0
+    bottomRight = screenToLocalTile world screenSize
+
+
+
+globalTiles :: [ChunkV Int] -> World -> Scene ChunkV Double
+globalTiles (filter validChunk -> visibleChunks) world =
+  globalTerrainTiles <> playerTile
+  where
+    globalTerrainTiles = foldMap (globalTerrainTile world) visibleChunks
+    playerTile = Scene.tileCenteredRectangle
+      (world ^. playerChunk) playerSize playerColor
+
+globalTerrainTile :: World -> ChunkV Int -> Scene ChunkV Double
+globalTerrainTile world chunk = terrain <> loadMarker
+  where
+    terrain = Scene.tileCenteredRectangle chunk 1 (Scene.Solid color)
+    color = floor <$> lerp gradient forestColor plainsColor
+    gradient = world ^. chunkGlobals . arrayAt chunk . treeDensity
+    loadMarker = case world ^. loadedChunkLocals . at chunk of
+      Just _ -> Scene.tileCenteredRectangle chunk 0.1 (Scene.Outline 255)
+      Nothing -> mempty
+
+
+
+localTiles :: [InChunkV Int] -> World -> Scene InChunkV Double
+localTiles visibleTiles world = localTerrainObjTiles <> playerTile
+  where
+    localTerrainObjTiles = foldMap (localTerrainObjTile world) visibleTiles
+    playerTile = Scene.tileCenteredRectangle
+      (world ^. playerPos) playerSize playerColor
+
+localTerrainObjTile :: World -> InChunkV Int -> Scene InChunkV Double
+localTerrainObjTile world tile =
+  case localAtChunk of
+    Just local ->
+      let objTiles =
+            foldMap (localObjTile tile)
+            . view (objects . at normTile . _Just)
+            $ local
+      in terrainTile <> objTiles
+    Nothing -> mempty
+  where
+    localAtChunk = world ^. loadedChunkLocals . at chunk
+    (chunk, normTile) = normalizeChunkPos (world ^. playerChunk) tile
+    terrainTile = Scene.tileCenteredRectangle tile 1 terrainColor
+
+localObjTile :: InChunkV Int -> Object -> Scene InChunkV Double
+localObjTile tile object = Scene.tileCenteredRectangle tile size color
+  where
+    (size, color) = case object of
+      Tree -> (treeSize, treeColor)
+      Arrow -> (arrowSize, arrowColor)
+
+
 
 globalTileToScreen :: Num a => World -> ChunkV a -> ScreenV a
 globalTileToScreen world =
@@ -76,75 +108,45 @@ screenToGlobalTile :: World -> ScreenV Int -> ChunkV Int
 screenToGlobalTile world =
   scrToTiles tileSize playerEyeOnScr (world ^. playerChunk)
 
-renderLocal :: Renderer -> World -> IO ()
-renderLocal renderer world = do
-  let
-    InChunkV (V2 left top) = chn 0
-    InChunkV (V2 right bottom) = chn screenSize
-    tiles = [inChunkV x y
-      | x <- [left .. right]
-      , y <- [top .. bottom]
-      ]
-  for_ tiles $ \pos -> do
-    let (i, pos') = normalizeChunkPos (world ^. playerChunk) pos
-    case world ^. loadedChunkLocals . at i of
-      Just chunkLocal -> do
-        rendererDrawColor renderer $= terrainColor
-        fillRect renderer . Just $ tileRectangle tileSize (scr . view _TileV $ pos)
-        for_ (chunkLocal ^. objects . at pos' . traversed) $
-          renderObject renderer (scr . view _TileV $ pos)
-      Nothing -> pure ()
+localTileToScreen :: Num a => World -> InChunkV a -> ScreenV a
+localTileToScreen world =
+  tilesToScr
+    tileSize
+    (fromIntegral <$> world ^. playerPos)
+    (fromIntegral <$> playerEyeOnScr)
 
-  rendererDrawColor renderer $= playerColor
-  fillRect renderer . Just
-    $ tileRectangle playerSize (world ^. playerPos . _TileV . to scr)
-  where
-    scr = tilesToScr tileSize (world ^. playerPos . _TileV) playerEyeOnScr
-    chn = view (from _TileV) . scrToTiles tileSize playerEyeOnScr (world ^. playerPos . _TileV)
-
-renderObject :: Integral a => Renderer -> ScreenV a -> Object -> IO ()
-renderObject renderer pos object = do
-  rendererDrawColor renderer $= color
-  fillRect renderer . Just $ tileRectangle size pos
-  where
-    (color, size) = case object of
-      Tree -> (treeColor, treeSize)
-      Arrow -> (arrowColor, arrowSize)
-
-tileRectangle :: (Integral a, Num b) => ScreenV a -> ScreenV a -> Rectangle b
-tileRectangle size tileTopLeft = fromIntegral <$> Rectangle rectTopLeft bounds
-  where
-    rectTopLeft = P . unScreenV $ tileTopLeft + ((`quot` 2) <$> tileSize - size)
-    bounds = unScreenV size
+screenToLocalTile :: World -> ScreenV Int -> InChunkV Int
+screenToLocalTile world =
+  scrToTiles tileSize playerEyeOnScr (world ^. playerPos)
 
 
 
-playerSize :: Num a => ScreenV a
-playerSize = screenV 20 20
+playerSize :: IsTileV t => t Double
+playerSize = view (from _V2) 0.7
 
-treeSize :: Num a => ScreenV a
-treeSize = screenV 28 28
+treeSize :: IsTileV t => t Double
+treeSize = view (from _V2) 0.75
 
-arrowSize :: Num a => ScreenV a
-arrowSize = screenV 30 4
+arrowSize :: IsTileV t => t Double
+arrowSize = view (from _V2) $ V2 0.9 0.1
 
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255
 
-playerColor :: Num a => V4 a
-playerColor = V4 255 255 255 255
+playerColor :: Scene.Color
+playerColor = Scene.Solid 255
 
-terrainColor :: Num a => V4 a
-terrainColor = V4 0 201 0 255
+terrainColor :: Scene.Color
+terrainColor = Scene.Solid $ V3 0 201 0
 
-treeColor :: Num a => V4 a
-treeColor = V4 157 93 17 255
+treeColor :: Scene.Color
+treeColor = Scene.Solid $ V3 157 93 17
 
-arrowColor :: Num a => V4 a
-arrowColor = V4 255 255 255 255
+arrowColor :: Scene.Color
+arrowColor = Scene.Outline 255
 
-plainsColor :: Num a => V4 a
-plainsColor = V4 0 255 0 255
+plainsColor :: Num a => V3 a
+plainsColor = V3 0 255 0
 
-forestColor :: Num a => V4 a
-forestColor = V4 0 31 0 255
+forestColor :: Num a => V3 a
+forestColor = V3 0 31 0

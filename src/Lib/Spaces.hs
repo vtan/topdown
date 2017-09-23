@@ -9,28 +9,28 @@ import Linear
 
 newtype ScreenV a = ScreenV { unScreenV :: V2 a }
   deriving (Functor, Applicative, Monad, Additive, Metric, Ix, Eq, Ord, Num,
-    Hashable, Show)
+    Fractional, Hashable, Show)
 
 screenV :: a -> a -> ScreenV a
 screenV x y = ScreenV $ V2 x y
 
 newtype TileV a = TileV { unTileV :: V2 a }
   deriving (Functor, Applicative, Monad, Additive, Metric, Ix, Eq, Ord, Num,
-    Hashable, Show)
+    Fractional, Hashable, Show)
 
 tileV :: a -> a -> TileV a
 tileV x y = TileV $ V2 x y
 
 newtype ChunkV a = ChunkV { unChunkV :: V2 a }
   deriving (Functor, Applicative, Monad, Additive, Metric, Ix, Eq, Ord, Num,
-    Hashable, Show)
+    Fractional, Hashable, Show)
 
 chunkV :: a -> a -> ChunkV a
 chunkV x y = ChunkV $ V2 x y
 
 newtype InChunkV a = InChunkV { unInChunkV :: V2 a }
   deriving (Functor, Applicative, Monad, Additive, Metric, Ix, Eq, Ord, Num,
-    Hashable, Show)
+    Fractional, Hashable, Show)
 
 inChunkV :: a -> a -> InChunkV a
 inChunkV x y = InChunkV $ V2 x y
