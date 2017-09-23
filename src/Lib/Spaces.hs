@@ -37,7 +37,7 @@ inChunkV x y = InChunkV $ V2 x y
 
 
 
-class IsV2 t where
+class Additive t => IsV2 t where
   _V2 :: Iso (t a) (t b) (V2 a) (V2 b)
 
 instance IsV2 ScreenV where _V2 = iso unScreenV ScreenV
@@ -45,21 +45,22 @@ instance IsV2 TileV where _V2 = iso unTileV TileV
 instance IsV2 ChunkV where _V2 = iso unChunkV ChunkV
 instance IsV2 InChunkV where _V2 = iso unInChunkV InChunkV
 
-class IsTileV t where
+class IsV2 t => IsTileV t where
   _TileV :: Iso (t a) (t b) (TileV a) (TileV b)
 
+instance IsTileV TileV where _TileV = id
 instance IsTileV ChunkV where _TileV = _V2 . from _V2
 instance IsTileV InChunkV where _TileV = _V2 . from _V2
 
 
-tilesToScr :: Num a => ScreenV a -> TileV a -> ScreenV a -> TileV a -> ScreenV a
+tilesToScr :: (IsTileV t, Num a) => ScreenV a -> t a -> ScreenV a -> t a -> ScreenV a
 tilesToScr tileSize eyeTiles eyeScr pos = eyeScr + eyeToPosOnScr
   where
     eyeToPosOnScr = view (from _V2) $
-      view _V2 tileSize * view _V2 (pos - eyeTiles)
+      view _V2 tileSize * view _V2 (pos ^-^ eyeTiles)
 
-scrToTiles :: Integral a => ScreenV a -> ScreenV a -> TileV a -> ScreenV a -> TileV a
-scrToTiles tileSize eyeScr eyeTiles pos = eyeTiles + eyeToPosInTiles
+scrToTiles :: (IsTileV t, Integral a) => ScreenV a -> ScreenV a -> t a -> ScreenV a -> t a
+scrToTiles tileSize eyeScr eyeTiles pos = eyeTiles ^+^ eyeToPosInTiles
   where
     eyeToPosInTiles = view (_V2 . from _V2) $
       div <$> (pos - eyeScr) <*> tileSize

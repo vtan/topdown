@@ -20,6 +20,7 @@ library
     Lib.ChunkGen,
     Lib.Main,
     Lib.Render,
+    Lib.Scene,
     Lib.Spaces
     Lib.Update,
     Lib.World,

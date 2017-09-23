@@ -1,12 +1,16 @@
 module Lib.Render (renderWorld) where
 
 import Lib.ChunkData
+import Lib.Scene (Scene)
 import Lib.Spaces
 import Lib.World
+
+import qualified Lib.Scene as Scene
 
 import Control.Lens
 import Control.Monad (when)
 import Data.Foldable (for_)
+import Data.Ix
 import SDL
 
 
@@ -16,11 +20,24 @@ renderWorld renderer world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
   case world ^. mapView of
-    Global -> renderGlobal renderer world
+    Global -> Scene.render renderer $ globalScene world
     Local -> renderLocal renderer world
   present renderer
 
 
+
+globalScene :: World -> Scene ScreenV Double
+globalScene world =
+  Scene.vmap (globalTileToScreen world)
+  $ globalTiles visibleTiles world
+  where
+    visibleTiles = range (topLeft, bottomRight)
+    topLeft = screenToGlobalTile world 0
+    bottomRight = screenToGlobalTile world screenSize
+
+globalTiles :: [ChunkV Int] -> World -> Scene ChunkV Double
+globalTiles visibleTiles world =
+  Scene.tileCenteredRectangle 0 1 (Scene.Solid 255)
 
 renderGlobal :: Renderer -> World -> IO ()
 renderGlobal renderer world = do
@@ -47,6 +64,17 @@ renderGlobal renderer world = do
   where
     scr = tilesToScr tileSize (world ^. playerChunk . _TileV) playerEyeOnScr
     chn = view (from _TileV) . scrToTiles tileSize playerEyeOnScr (world ^. playerChunk . _TileV)
+
+globalTileToScreen :: Num a => World -> ChunkV a -> ScreenV a
+globalTileToScreen world =
+  tilesToScr
+    tileSize
+    (fromIntegral <$> world ^. playerChunk)
+    (fromIntegral <$> playerEyeOnScr)
+
+screenToGlobalTile :: World -> ScreenV Int -> ChunkV Int
+screenToGlobalTile world =
+  scrToTiles tileSize playerEyeOnScr (world ^. playerChunk)
 
 renderLocal :: Renderer -> World -> IO ()
 renderLocal renderer world = do
