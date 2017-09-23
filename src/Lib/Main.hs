@@ -16,7 +16,9 @@ main :: IO ()
 main = do
   initializeAll
   window <- createWindow (fromString "topdown") defaultWindow
-  renderer <- createRenderer window (-1) defaultRenderer
+  let rendererConfig = defaultRenderer
+        { rendererType = AcceleratedVSyncRenderer }
+  renderer <- createRenderer window (-1) rendererConfig
   world0 <- loadChunksNearPlayer <$> evalRandIO initialWorld
   flip fix world0 $ \go world -> do
     events <- pollEvents
