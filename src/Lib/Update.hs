@@ -55,7 +55,7 @@ applyMouseClick world posScr = case world ^. mapView of
   Global -> pure world
   Local -> shootArrow posChn world
   where
-    posChn = view (from tiledInChunk) $ scrToTiles tileSize eyeScr (world ^. playerPos . tiledInChunk) posScr
+    posChn = view (from _TileV) $ scrToTiles tileSize eyeScr (world ^. playerPos . _TileV) posScr
     eyeScr = (`quot` 2) <$> screenSize - tileSize
 
 movePlayerGlobal :: ChunkV Int -> World -> World
