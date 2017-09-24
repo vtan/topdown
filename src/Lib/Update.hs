@@ -7,13 +7,15 @@ import Lib.World
 
 import Control.Arrow ((&&&))
 import Control.Lens
-import Control.Monad.Random (MonadRandom, getRandomR)
+import Control.Monad.Random (MonadRandom)
 import Data.Foldable (foldlM)
 import Data.Hashable (hash)
 import Data.Ix (range)
 import Data.List (foldl', sort)
+import Data.Maybe
 import SDL
 
+import qualified Control.Monad.Random as Random
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -125,34 +127,19 @@ unloadFarChunks world
       . Set.toList . Map.keysSet $ locals
 
 shootArrow :: MonadRandom m => InChunkV Int -> World -> m World
-shootArrow target world
-  | dist >= 1.0 && dist <= maxDist = do
-    arrow <- (source +) <$> deviatedArrow dist dir
-    let (arrowIdx, arrowChn) = normalizeChunkPos (world ^. playerChunk) arrow
-    pure $ world
-      & loadedChunkLocals . at arrowIdx . _Just
-      . objects . at arrowChn %~ \case
-        Just objs -> Just $ objs ++ [Arrow]
-        Nothing -> Just [Arrow]
-  | otherwise = pure world
+shootArrow target world = do
+  hit <- (< hitChance) <$> Random.getRandom
+  hitPos <- if hit
+    then pure target
+    else Random.uniform neighbors
+  let (hitChunk, hitPosNorm) = normalizeChunkPos (world ^. playerChunk) hitPos
+  pure $ over (objsAt hitChunk hitPosNorm) addArrow world
   where
-    dist = sqrt $ quadrance playerToTarget
-    dir = (let InChunkV (V2 x y) = playerToTarget in atan2 y x)
-    playerToTarget :: InChunkV Float
-    playerToTarget = fromIntegral <$> target - source
-    source = world ^. playerPos
-    maxDist = 20.0
-
-deviatedArrow :: MonadRandom m => Float -> Float -> m (InChunkV Int)
-deviatedArrow targetDist targetDir = do
-  distDeviation <- getRandomR (-maxDistMultiplier, maxDistMultiplier)
-  dirDeviation <- getRandomR (-maxDirDeviation, maxDirDeviation)
-  let dist = targetDist + distDeviation * targetDist
-      dir = targetDir + dirDeviation
-  pure . InChunkV $ round <$> dist *^ angle dir
-  where
-    maxDistMultiplier = 0.3
-    maxDirDeviation = targetDist / 12.0 * pi / 4.0
+    objsAt chunk pos =
+      loadedChunkLocals . at chunk . _Just . objects . at pos
+    addArrow = Just . (|> Arrow) . fromMaybe []
+    hitChance = 0.7 :: Double
+    neighbors = [target + v | v <- range ((-1), 1), v /= 0]
 
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
 scancodeToDir = \case
