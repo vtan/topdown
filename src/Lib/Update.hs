@@ -13,7 +13,6 @@ import Data.Foldable (foldlM)
 import Data.Hashable (hash)
 import Data.Ix (range)
 import Data.List (foldl', sort)
-import Data.Maybe
 import SDL
 
 import qualified Control.Monad.Random as Random
@@ -134,13 +133,17 @@ shootArrow target world = do
     then pure target
     else Random.uniform neighbors
   let (hitChunk, hitPosNorm) = normalizeChunkPos (world ^. playerChunk) hitPos
-  pure $ over (objsAt hitChunk hitPosNorm) addArrow world
+  pure $ over (objsAt hitChunk hitPosNorm) shootArrowAt world
   where
     objsAt chunk pos =
-      loadedChunkLocals . at chunk . _Just . objects . at pos
-    addArrow = Just . (|> Arrow) . fromMaybe []
+      loadedChunkLocals . at chunk . _Just . objects . at pos . non []
     hitChance = 0.7
     neighbors = [target + v | v <- range ((-1), 1), v /= 0]
+
+shootArrowAt :: [Object] -> [Object]
+shootArrowAt objs
+  | elem Deer objs = filter (/= Deer) objs
+  | otherwise = objs |> Arrow
 
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
 scancodeToDir = \case
