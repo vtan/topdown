@@ -1,5 +1,6 @@
 module Lib.Util where
 
+import Control.Monad.Random
 import Control.Monad.Zip
 import Data.Ix
 
@@ -14,3 +15,8 @@ minMaxZip a b = munzip $ mzipWith minMax a b
 
 rangeZip :: (MonadZip t, Ix (t a), Ord a) => (t a, t a) -> [t a]
 rangeZip (x, y)= range $ minMaxZip x y
+
+
+
+randomChance :: MonadRandom m => Float -> m Bool
+randomChance x = (< x) <$> getRandom

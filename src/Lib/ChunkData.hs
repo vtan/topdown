@@ -20,6 +20,7 @@ data ChunkLocal = ChunkLocal
 data Object
   = Tree
   | Arrow
+  | Deer
   deriving (Eq, Show)
 
 makeFields ''ChunkGlobal

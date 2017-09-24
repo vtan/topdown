@@ -3,6 +3,7 @@ module Lib.Update where
 import Lib.ChunkData
 import Lib.ChunkGen
 import Lib.Spaces
+import Lib.Util
 import Lib.World
 
 import Control.Arrow ((&&&))
@@ -128,7 +129,7 @@ unloadFarChunks world
 
 shootArrow :: MonadRandom m => InChunkV Int -> World -> m World
 shootArrow target world = do
-  hit <- (< hitChance) <$> Random.getRandom
+  hit <- randomChance hitChance
   hitPos <- if hit
     then pure target
     else Random.uniform neighbors
@@ -138,7 +139,7 @@ shootArrow target world = do
     objsAt chunk pos =
       loadedChunkLocals . at chunk . _Just . objects . at pos
     addArrow = Just . (|> Arrow) . fromMaybe []
-    hitChance = 0.7 :: Double
+    hitChance = 0.7
     neighbors = [target + v | v <- range ((-1), 1), v /= 0]
 
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
@@ -157,6 +158,7 @@ passable :: Object -> Bool
 passable = \case
   Tree -> False
   Arrow -> True
+  Deer -> False
 
 
 

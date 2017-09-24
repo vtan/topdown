@@ -94,6 +94,7 @@ localObjTile tile object = Scene.tileCenteredRectangle tile size color
     (size, color) = case object of
       Tree -> (treeSize, treeColor)
       Arrow -> (arrowSize, arrowColor)
+      Deer -> (deerSize, deerColor)
 
 
 
@@ -130,6 +131,9 @@ treeSize = view (from _V2) 0.75
 arrowSize :: IsTileV t => t Double
 arrowSize = view (from _V2) $ V2 0.9 0.1
 
+deerSize :: IsTileV t => t Double
+deerSize = view (from _V2) $ V2 0.9 0.6
+
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255
 
@@ -144,6 +148,9 @@ treeColor = Scene.Solid $ V3 157 93 17
 
 arrowColor :: Scene.Color
 arrowColor = Scene.Outline 255
+
+deerColor :: Scene.Color
+deerColor = Scene.Solid $ V3 210 93 17
 
 plainsColor :: Num a => V3 a
 plainsColor = V3 0 255 0
