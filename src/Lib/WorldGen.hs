@@ -24,4 +24,5 @@ initialWorld = do
     , worldChunkGlobals = Array.array (0, worldSize - 1) assocs
     , worldLoadedChunkLocals = mempty
     , worldMapView = Local
+    , worldInventory = mempty
     }

@@ -37,6 +37,8 @@ library
     MonadRandom,
     mtl,
     sdl2,
+    sdl2-ttf,
+    text,
     vector
   default-extensions:
     FlexibleContexts,
@@ -45,6 +47,7 @@ library
     GeneralizedNewtypeDeriving,
     LambdaCase,
     MultiParamTypeClasses,
+    OverloadedStrings,
     RankNTypes,
     TupleSections,
     TypeFamilies,

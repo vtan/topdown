@@ -12,16 +12,19 @@ import Control.Lens
 import Data.Monoid
 import SDL
 
+import qualified SDL.Font as Sdl.Font
+import qualified Data.Text as Text
 
 
-renderWorld :: Renderer -> World -> IO ()
-renderWorld renderer world = do
+
+renderWorld :: Renderer -> Sdl.Font.Font -> World -> IO ()
+renderWorld renderer font world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
   let scene = case world ^. mapView of
         Global -> globalScene world
         Local -> localScene world
-  Scene.render renderer scene
+  Scene.render renderer font scene
   present renderer
 
 
@@ -37,8 +40,8 @@ globalScene world =
 
 localScene :: World -> Scene ScreenV Double
 localScene world =
-  Scene.vmap (localTileToScreen world)
-  $ localTiles visibleTiles world
+  Scene.vmap (localTileToScreen world) (localTiles visibleTiles world)
+  <> inventoryScene world
   where
     visibleTiles = rangeZip (topLeft, bottomRight)
     topLeft = screenToLocalTile world 0
@@ -95,6 +98,19 @@ localObjTile tile object = Scene.tileCenteredRectangle tile size color
       Tree -> (treeSize, treeColor)
       Arrow -> (arrowSize, arrowColor)
       Deer -> (deerSize, deerColor)
+      Meat -> (meatSize, meatColor)
+
+
+
+inventoryScene :: World -> Scene ScreenV Double
+inventoryScene world =
+  Scene.text 0 "Inventory" 255
+  <> (ifoldMap line . map lineStr . itoList . view inventory) world
+  where
+    line i str =
+      let pos = screenV 0 (fromIntegral $ (i + 1) * 16)
+      in Scene.text pos str 255
+    lineStr (obj, count) = Text.pack $ unwords [show count, show obj]
 
 
 
@@ -134,23 +150,29 @@ arrowSize = view (from _V2) $ V2 0.9 0.1
 deerSize :: IsTileV t => t Double
 deerSize = view (from _V2) $ V2 0.9 0.6
 
+meatSize :: IsTileV t => t Double
+meatSize = view (from _V2) $ V2 0.8 0.4
+
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255
 
-playerColor :: Scene.Color
+playerColor :: Scene.Style
 playerColor = Scene.Solid 255
 
-terrainColor :: Scene.Color
+terrainColor :: Scene.Style
 terrainColor = Scene.Solid $ V3 0 201 0
 
-treeColor :: Scene.Color
+treeColor :: Scene.Style
 treeColor = Scene.Solid $ V3 157 93 17
 
-arrowColor :: Scene.Color
+arrowColor :: Scene.Style
 arrowColor = Scene.Outline 255
 
-deerColor :: Scene.Color
+deerColor :: Scene.Style
 deerColor = Scene.Solid $ V3 210 93 17
+
+meatColor :: Scene.Style
+meatColor = Scene.Solid $ V3 210 17 180
 
 plainsColor :: Num a => V3 a
 plainsColor = V3 0 255 0

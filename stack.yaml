@@ -6,6 +6,9 @@ resolver: lts-8.5
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+- location:
+    git: https://github.com/haskell-game/sdl2-ttf.git
+    commit: d98b475813e5d58aa0408ccf4f8cf4ea114db982
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: []

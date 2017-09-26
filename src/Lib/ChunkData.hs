@@ -21,7 +21,8 @@ data Object
   = Tree
   | Arrow
   | Deer
-  deriving (Eq, Show)
+  | Meat
+  deriving (Eq, Ord, Show)
 
 makeFields ''ChunkGlobal
 makeFields ''ChunkLocal

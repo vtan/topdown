@@ -5,8 +5,7 @@ module Lib.World where
 import Lib.ChunkData
 import Lib.Spaces
 
-import Control.Lens (Lens', lens)
-import Control.Lens.TH (makeFields)
+import Control.Lens
 import Data.Array (Array, Ix)
 import Data.Map (Map)
 import Linear.V2
@@ -21,6 +20,7 @@ data World = World
   , worldChunkGlobals :: Array (ChunkV Int) ChunkGlobal
   , worldLoadedChunkLocals :: Map (ChunkV Int) ChunkLocal
   , worldMapView :: MapView
+  , worldInventory :: Map Object Int
   } deriving (Eq, Show)
 
 data MapView
@@ -44,6 +44,10 @@ arrayAt i = lens getter setter
   where
     getter a = a Array.! i
     setter a x = a Array.// [(i, x)]
+
+objectsAt :: ChunkV Int -> InChunkV Int -> Traversal' World [Object]
+objectsAt chunk pos =
+  loadedChunkLocals . at chunk . _Just . objects . at pos . non []
 
 worldSize :: Num a => ChunkV a
 worldSize = chunkV 20 20

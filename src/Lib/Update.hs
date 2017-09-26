@@ -55,9 +55,17 @@ applyKeyPress world = pure . \case
 applyMouseClick :: MonadRandom m => World -> ScreenV Int -> m World
 applyMouseClick world posScr = case world ^. mapView of
   Global -> pure world
-  Local -> shootArrow posChn world
+  Local -> if clickedOnMeat && clickedNextToPlayer
+    then pure
+      . over (inventory . at Meat . non 0) (+1)
+      . over (objectsAt chunk posNorm) (filter (/= Meat))
+      $ world
+    else shootArrow posChn world
   where
+    clickedOnMeat = elem Meat (world ^. objectsAt chunk posNorm)
+    clickedNextToPlayer = neighborOf posChn (world ^. playerPos)
     posChn = view (from _TileV) $ scrToTiles tileSize eyeScr (world ^. playerPos . _TileV) posScr
+    (chunk, posNorm) = normalizeChunkPos (world ^. playerChunk) posChn
     eyeScr = (`quot` 2) <$> screenSize - tileSize
 
 movePlayerGlobal :: ChunkV Int -> World -> World
@@ -133,16 +141,14 @@ shootArrow target world = do
     then pure target
     else Random.uniform neighbors
   let (hitChunk, hitPosNorm) = normalizeChunkPos (world ^. playerChunk) hitPos
-  pure $ over (objsAt hitChunk hitPosNorm) shootArrowAt world
+  pure $ over (objectsAt hitChunk hitPosNorm) shootArrowAt world
   where
-    objsAt chunk pos =
-      loadedChunkLocals . at chunk . _Just . objects . at pos . non []
     hitChance = 0.7
     neighbors = [target + v | v <- range ((-1), 1), v /= 0]
 
 shootArrowAt :: [Object] -> [Object]
 shootArrowAt objs
-  | elem Deer objs = filter (/= Deer) objs
+  | elem Deer objs = filter (/= Deer) objs |> Meat
   | otherwise = objs |> Arrow
 
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
@@ -162,6 +168,7 @@ passable = \case
   Tree -> False
   Arrow -> True
   Deer -> False
+  Meat -> True
 
 
 
