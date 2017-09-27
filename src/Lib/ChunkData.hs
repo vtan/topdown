@@ -23,6 +23,8 @@ data Object
   | Arrow
   | Deer
   | Meat
+  | Wall
+  | Villager
   deriving (Eq, Ord, Show)
 
 makeFields ''ChunkGlobal

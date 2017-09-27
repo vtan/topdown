@@ -106,6 +106,8 @@ localObjTile tile object = Scene.tileCenteredRectangle tile size color
       Arrow -> (arrowSize, arrowColor)
       Deer -> (deerSize, deerColor)
       Meat -> (meatSize, meatColor)
+      Wall -> (1, Scene.Solid $ V3 190 100 20)
+      Villager -> (inChunkV 0.3 0.8, Scene.Solid $ V3 255 255 31)
 
 
 

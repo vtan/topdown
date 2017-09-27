@@ -92,4 +92,4 @@ chunkRelPositions = [InChunkV $ V2 x y
   | x <- [0 .. chunkSize - 1] , y <- [0 .. chunkSize - 1]]
 
 chunkSize :: Num a => a
-chunkSize = 16
+chunkSize = 64

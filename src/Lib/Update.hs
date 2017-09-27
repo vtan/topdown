@@ -203,6 +203,8 @@ passable = \case
   Arrow -> True
   Deer -> False
   Meat -> True
+  Wall -> False
+  Villager -> False
 
 storable :: Object -> Bool
 storable = \case
@@ -210,6 +212,8 @@ storable = \case
   Meat -> True
   Deer -> False
   Tree -> False
+  Wall -> False
+  Villager -> False
 
 
 
