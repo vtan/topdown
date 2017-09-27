@@ -9,6 +9,7 @@ import Lib.World
 import qualified Lib.Scene as Scene
 
 import Control.Lens
+import Data.Char
 import Data.Monoid
 import SDL
 
@@ -42,6 +43,7 @@ localScene :: World -> Scene ScreenV Double
 localScene world =
   Scene.vmap (localTileToScreen world) (localTiles visibleTiles world)
   <> inventoryScene world
+  <> foldMap (dropdownScene world) (world ^. activeDropdown)
   where
     visibleTiles = rangeZip (topLeft, bottomRight)
     topLeft = screenToLocalTile world 0
@@ -112,29 +114,18 @@ inventoryScene world =
       in Scene.text pos str 255
     lineStr (obj, count) = Text.pack $ unwords [show count, show obj]
 
-
-
-globalTileToScreen :: Num a => World -> ChunkV a -> ScreenV a
-globalTileToScreen world =
-  tilesToScr
-    tileSize
-    (fromIntegral <$> world ^. playerChunk)
-    (fromIntegral <$> playerEyeOnScr)
-
-screenToGlobalTile :: World -> ScreenV Int -> ChunkV Int
-screenToGlobalTile world =
-  scrToTiles tileSize playerEyeOnScr (world ^. playerChunk)
-
-localTileToScreen :: Num a => World -> InChunkV a -> ScreenV a
-localTileToScreen world =
-  tilesToScr
-    tileSize
-    (fromIntegral <$> world ^. playerPos)
-    (fromIntegral <$> playerEyeOnScr)
-
-screenToLocalTile :: World -> ScreenV Int -> InChunkV Int
-screenToLocalTile world =
-  scrToTiles tileSize playerEyeOnScr (world ^. playerPos)
+dropdownScene :: World -> Dropdown -> Scene ScreenV Double
+dropdownScene world (Dropdown anchor items) =
+  fromIntegral <$> ifoldMap item items
+  where
+    item i (DropdownItem cmd _) =
+      let pos = anchorScr + screenV 0 (i * dropdownItemSize ^. _y)
+          str = case cmd of
+            ShootArrow -> "Shoot arrow"
+            GetObject o -> Text.pack $ unwords ["Get", over _head toLower $ show o]
+      in Scene.rectangle pos (pos + dropdownItemSize) dropdownItemColor
+         <> Scene.text pos str 255
+    anchorScr = floor <$> localTileToScreen world anchor
 
 
 
@@ -152,6 +143,9 @@ deerSize = view (from _V2) $ V2 0.9 0.6
 
 meatSize :: IsTileV t => t Double
 meatSize = view (from _V2) $ V2 0.8 0.4
+
+dropdownItemColor :: Scene.Style
+dropdownItemColor = Scene.Solid 127
 
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255

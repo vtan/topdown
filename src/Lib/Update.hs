@@ -55,18 +55,47 @@ applyKeyPress world = pure . \case
 applyMouseClick :: MonadRandom m => World -> ScreenV Int -> m World
 applyMouseClick world posScr = case world ^. mapView of
   Global -> pure world
-  Local -> if clickedOnMeat && clickedNextToPlayer
-    then pure
-      . over (inventory . at Meat . non 0) (+1)
-      . over (objectsAt chunk posNorm) (filter (/= Meat))
-      $ world
-    else shootArrow posChn world
+  Local -> case world ^. activeDropdown of
+    Just d -> applyDropdownClick posScr d world
+    Nothing ->
+      case items of
+        [] -> pure world
+        _ -> pure $ set activeDropdown dropdown world
   where
-    clickedOnMeat = elem Meat (world ^. objectsAt chunk posNorm)
-    clickedNextToPlayer = neighborOf posChn (world ^. playerPos)
-    posChn = view (from _TileV) $ scrToTiles tileSize eyeScr (world ^. playerPos . _TileV) posScr
-    (chunk, posNorm) = normalizeChunkPos (world ^. playerChunk) posChn
+    withinGetDistance = withinRadius 1 pos (world ^. playerPos)
+    pos = floor <$> fracPos
+    fracPos = view (from _TileV) $ scrToTiles tileSize eyeScr (world ^. playerPos . _TileV) posScr
+    (chunk, posNorm) = normalizeChunkPos (world ^. playerChunk) pos
     eyeScr = (`quot` 2) <$> screenSize - tileSize
+    dropdown = case items of
+      [] -> Nothing
+      _ -> Just $ Dropdown fracPos items
+    items = getObjItems ++ shootArrowItems
+    getObjItems
+      | withinGetDistance =
+          map (\o -> DropdownItem (GetObject o) (pure . getObject o chunk posNorm))
+          . sort
+          . filter storable
+          $ world ^. objectsAt chunk posNorm
+      | otherwise = []
+    shootArrowItems
+      | (validChunk chunk && world ^. playerPos /= pos) =
+          [DropdownItem ShootArrow $ shootArrow pos]
+      | otherwise = []
+
+applyDropdownClick :: MonadRandom m => ScreenV Int -> Dropdown -> World -> m World
+applyDropdownClick clickPos (Dropdown anchor cmds) world =
+  applyCont . set activeDropdown Nothing $ world
+  where
+    applyCont = case clickedItem of
+      Just (DropdownItem _ cont) -> cont
+      Nothing -> pure
+    clickedItem = fmap snd . flip ifind cmds $ \i _ ->
+      let topLeft = anchorScr + screenV 0 (i * dropdownItemSize ^. _y)
+      in inRectangle clickPos (topLeft, topLeft + dropdownItemSize)
+    anchorScr = floor <$> localTileToScreen world anchor
+
+
 
 movePlayerGlobal :: ChunkV Int -> World -> World
 movePlayerGlobal dir world
@@ -151,6 +180,11 @@ shootArrowAt objs
   | elem Deer objs = filter (/= Deer) objs |> Meat
   | otherwise = objs |> Arrow
 
+getObject :: Object -> ChunkV Int -> InChunkV Int -> World -> World
+getObject obj chunk pos =
+  over (inventory . at obj . non 0) (+1)
+  . over (objectsAt chunk pos) (filter (/= obj))
+
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
 scancodeToDir = \case
   ScancodeRight -> Just $ unit _x
@@ -169,6 +203,13 @@ passable = \case
   Arrow -> True
   Deer -> False
   Meat -> True
+
+storable :: Object -> Bool
+storable = \case
+  Arrow -> True
+  Meat -> True
+  Deer -> False
+  Tree -> False
 
 
 

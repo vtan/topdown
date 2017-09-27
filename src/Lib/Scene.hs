@@ -1,5 +1,8 @@
 module Lib.Scene
-  (Scene(..), Elem(..), Style(..), vmap, tileCenteredRectangle, text, render)
+  ( Scene(..), Elem(..), Style(..)
+  , vmap, rectangle, tileCenteredRectangle, text
+  , render
+  )
 where
 
 import Lib.Spaces
@@ -20,7 +23,7 @@ import qualified SDL.Font as Sdl.Font
 
 
 newtype Scene v a = Scene [Elem v a]
-  deriving (Monoid, Eq, Show)
+  deriving (Functor, Monoid, Eq, Show)
 
 data Elem v a
   = Rectangle
@@ -33,7 +36,7 @@ data Elem v a
     , _text :: Text
     , _color :: V3 Word8
     }
-  deriving (Eq, Show)
+  deriving (Functor, Eq, Show)
 
 data Style
   = Solid (V3 Word8)
@@ -51,6 +54,9 @@ vmap f (Scene elems) = Scene $ map vmap' elems
         in Rectangle minCorner' maxCorner' style
       Text corner size text_ ->
         Text (f corner) size text_
+
+rectangle :: t a -> t a -> Style -> Scene t a
+rectangle mi ma s = Scene [Rectangle mi ma s]
 
 tileCenteredRectangle :: (IsTileV t, Fractional a)
   => t Int -> t a -> Style -> Scene t a
@@ -78,7 +84,7 @@ renderElem renderer font = \case
       setColor color
       Sdl.drawRect renderer $ sdlRect minCorner maxCorner
   Text corner text_ (color4 -> color) -> do
-    surface <- Sdl.Font.solid font color text_
+    surface <- Sdl.Font.blended font color text_
     size <- Sdl.surfaceDimensions surface
     texture <- Sdl.createTextureFromSurface renderer surface
     Sdl.copy renderer texture Nothing (Just $ Sdl.Rectangle (P $ v2 corner) size)

@@ -41,6 +41,7 @@ library
     text,
     vector
   default-extensions:
+    DeriveFunctor,
     FlexibleContexts,
     FlexibleInstances,
     FunctionalDependencies,
@@ -50,6 +51,7 @@ library
     OverloadedStrings,
     RankNTypes,
     TupleSections,
+    TypeApplications,
     TypeFamilies,
     ViewPatterns
 

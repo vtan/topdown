@@ -6,6 +6,7 @@ import Lib.ChunkData
 import Lib.Spaces
 
 import Control.Lens
+import Control.Monad.Random
 import Data.Array (Array, Ix)
 import Data.Map (Map)
 import Linear.V2
@@ -21,16 +22,56 @@ data World = World
   , worldLoadedChunkLocals :: Map (ChunkV Int) ChunkLocal
   , worldMapView :: MapView
   , worldInventory :: Map Object Int
-  } deriving (Eq, Show)
+  , worldActiveDropdown :: Maybe Dropdown
+  } deriving (Show)
 
 data MapView
   = Global
   | Local
-  deriving (Eq, Show)
+  deriving (Show)
+
+data Dropdown = Dropdown
+  { dropdownAnchor :: InChunkV Double
+  , dropdownItems :: [DropdownItem]
+  } deriving (Show)
+
+data DropdownItem = DropdownItem
+  { dropdownItemCommand :: UserCommand
+  , dropdownItemCont :: forall m. MonadRandom m => World -> m World
+  }
+
+instance Show DropdownItem where show (DropdownItem cmd _) = show cmd
+
+data UserCommand
+  = ShootArrow
+  | GetObject Object
+  deriving (Show)
 
 makeFields ''World
 
 
+
+globalTileToScreen :: Num a => World -> ChunkV a -> ScreenV a
+globalTileToScreen world =
+  tilesToScr
+    tileSize
+    (fromIntegral <$> world ^. playerChunk)
+    (fromIntegral <$> playerEyeOnScr)
+
+screenToGlobalTile :: World -> ScreenV Int -> ChunkV Int
+screenToGlobalTile world = fmap (floor @Double)
+  . scrToTiles tileSize playerEyeOnScr (world ^. playerChunk)
+
+localTileToScreen :: Num a => World -> InChunkV a -> ScreenV a
+localTileToScreen world =
+  tilesToScr
+    tileSize
+    (fromIntegral <$> world ^. playerPos)
+    (fromIntegral <$> playerEyeOnScr)
+
+screenToLocalTile :: World -> ScreenV Int -> InChunkV Int
+screenToLocalTile world = fmap (floor @Double)
+  . scrToTiles tileSize playerEyeOnScr (world ^. playerPos)
 
 validChunk :: (Num a, Ord a) => ChunkV a -> Bool
 validChunk i = xInRange && yInRange
@@ -57,6 +98,9 @@ screenSize = screenV 800 600
 
 tileSize :: Num a => ScreenV a
 tileSize = screenV 32 32
+
+dropdownItemSize :: Num a => ScreenV a
+dropdownItemSize = screenV 180 16
 
 playerEyeOnScr :: ScreenV Int
 playerEyeOnScr = (`quot` 2) <$> screenSize - tileSize

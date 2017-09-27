@@ -72,11 +72,13 @@ tilesToScr tileSize eyeTiles eyeScr pos = eyeScr + eyeToPosOnScr
     eyeToPosOnScr = view (from _V2) $
       over _y negate $ view _V2 tileSize * view _V2 (pos ^-^ eyeTiles)
 
-scrToTiles :: (IsTileV t, Integral a) => ScreenV a -> ScreenV a -> t a -> ScreenV a -> t a
-scrToTiles tileSize eyeScr eyeTiles pos = eyeTiles ^+^ eyeToPosInTiles
+scrToTiles :: (IsTileV t, Integral a, Fractional b)
+  => ScreenV a -> ScreenV a -> t a -> ScreenV a -> t b
+scrToTiles tileSize eyeScr eyeTiles pos =
+  fmap fromIntegral eyeTiles ^+^ eyeToPosInTiles
   where
     eyeToPosInTiles = view (_V2 . from _V2) $
-      div <$> over _y negate (pos - eyeScr) <*> tileSize
+      (over _y negate . fmap fromIntegral $ pos - eyeScr) / fmap fromIntegral tileSize
 
 normalizeChunkPos :: Integral a => ChunkV a -> InChunkV a -> (ChunkV a, InChunkV a)
 normalizeChunkPos i pos = (i + di, pos')

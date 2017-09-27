@@ -25,4 +25,5 @@ initialWorld = do
     , worldLoadedChunkLocals = mempty
     , worldMapView = Local
     , worldInventory = mempty
+    , worldActiveDropdown = Nothing
     }
