@@ -11,6 +11,7 @@ import Data.Map (Map)
 
 data ChunkGlobal = ChunkGlobal
   { chunkGlobalTreeDensity :: Float
+  , chunkGlobalHasVillage :: Bool
   } deriving (Eq, Show)
 
 data ChunkLocal = ChunkLocal

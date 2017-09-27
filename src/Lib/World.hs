@@ -91,7 +91,7 @@ objectsAt chunk pos =
   loadedChunkLocals . at chunk . _Just . objects . at pos . non []
 
 worldSize :: Num a => ChunkV a
-worldSize = chunkV 20 20
+worldSize = chunkV 100 100
 
 screenSize :: Num a => ScreenV a
 screenSize = screenV 800 600

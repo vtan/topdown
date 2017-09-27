@@ -60,11 +60,16 @@ globalTiles (filter validChunk -> visibleChunks) world =
       (world ^. playerChunk) playerSize playerColor
 
 globalTerrainTile :: World -> ChunkV Int -> Scene ChunkV Double
-globalTerrainTile world chunk = terrain <> loadMarker
+globalTerrainTile world chunk = terrain <> villageMarker <> loadMarker
   where
     terrain = Scene.tileCenteredRectangle chunk 1 (Scene.Solid color)
     color = floor <$> lerp gradient forestColor plainsColor
-    gradient = world ^. chunkGlobals . arrayAt chunk . treeDensity
+    gradient = global ^. treeDensity
+    villageMarker
+      | global ^. hasVillage =
+          Scene.tileCenteredRectangle chunk villageMarkerSize villageMarkerColor
+      | otherwise = mempty
+    global = world ^. chunkGlobals . arrayAt chunk
     loadMarker = case world ^. loadedChunkLocals . at chunk of
       Just _ -> Scene.tileCenteredRectangle chunk 0.1 (Scene.Outline 255)
       Nothing -> mempty
@@ -144,6 +149,9 @@ deerSize = view (from _V2) $ V2 0.9 0.6
 meatSize :: IsTileV t => t Double
 meatSize = view (from _V2) $ V2 0.8 0.4
 
+villageMarkerSize :: IsTileV t => t Double
+villageMarkerSize = view (from _V2) 0.8
+
 dropdownItemColor :: Scene.Style
 dropdownItemColor = Scene.Solid 127
 
@@ -173,3 +181,6 @@ plainsColor = V3 0 255 0
 
 forestColor :: Num a => V3 a
 forestColor = V3 0 31 0
+
+villageMarkerColor :: Scene.Style
+villageMarkerColor = treeColor

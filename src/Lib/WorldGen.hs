@@ -1,23 +1,21 @@
-module Lib.WorldGen where
+module Lib.WorldGen (initialWorld) where
 
 import Lib.ChunkData
+import Lib.Spaces
 import Lib.World
 
 import Control.Monad (forM)
-import Control.Monad.Random (MonadRandom, getRandom)
+import Control.Monad.Random
 
 import qualified Data.Array as Array
 import qualified Data.Ix as Ix
 
 
 
-generateChunkGlobal :: MonadRandom m => m ChunkGlobal
-generateChunkGlobal = ChunkGlobal <$> getRandom
-
 initialWorld :: MonadRandom m => m World
 initialWorld = do
   assocs <- forM (Ix.range (0, worldSize - 1)) $ \i ->
-    (i,) . ChunkGlobal <$> getRandom
+    (i,) <$> generateChunkGlobal i
   pure World
     { worldPlayerChunk = 0
     , worldPlayerPos = 0
@@ -27,3 +25,13 @@ initialWorld = do
     , worldInventory = mempty
     , worldActiveDropdown = Nothing
     }
+
+
+
+generateChunkGlobal :: MonadRandom m => ChunkV Int -> m ChunkGlobal
+generateChunkGlobal chunk =
+  ChunkGlobal <$> getRandom <*> hasVillage
+  where
+    hasVillage = all ((== 0) . (`mod` 10)) <$> perturbedChunk
+    perturbedChunk = (chunk +) <$> (chunkV <$> d <*> d)
+    d = getRandomR ((-3), 3)
