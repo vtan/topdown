@@ -122,18 +122,17 @@ inventoryScene world =
     lineStr (obj, count) = Text.pack $ unwords [show count, showObject obj]
 
 dropdownScene :: World -> Dropdown -> Scene ScreenV Double
-dropdownScene world (Dropdown anchor items) =
-  fromIntegral <$> ifoldMap item items
+dropdownScene world (Dropdown anchor cmds) =
+  fmap fromIntegral . flip ifoldMap cmds $ \i cmd ->
+    let pos = anchorScr + screenV 0 (i * dropdownItemSize ^. _y)
+        str = case cmd of
+          ShootArrow _ -> "Shoot arrow"
+          GetObject _ _ o -> Text.pack $ unwords ["Get", showObject o]
+          TradeObjects givenQty givenObj recvdQty recvdObj ->
+            Text.pack $ unwords ["Trade", show givenQty, showObject givenObj, "for", show recvdQty, showObject recvdObj]
+    in Scene.rectangle pos (pos + dropdownItemSize) dropdownItemColor
+       <> Scene.text pos str 255
   where
-    item i (DropdownItem cmd _) =
-      let pos = anchorScr + screenV 0 (i * dropdownItemSize ^. _y)
-          str = case cmd of
-            ShootArrow -> "Shoot arrow"
-            GetObject o -> Text.pack $ unwords ["Get", showObject o]
-            TradeObject givenQty givenObj recvdQty recvdObj ->
-              Text.pack $ unwords ["Trade", show givenQty, showObject givenObj, "for", show recvdQty, showObject recvdObj]
-      in Scene.rectangle pos (pos + dropdownItemSize) dropdownItemColor
-         <> Scene.text pos str 255
     anchorScr = floor <$> localTileToScreen world anchor
 
 

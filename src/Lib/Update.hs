@@ -73,20 +73,19 @@ applyMouseClick world posScr = case world ^. mapView of
     items = tradeItems ++ getObjItems ++ shootArrowItems
     getObjItems
       | neighbor =
-          map (\o -> DropdownItem (GetObject o) (pure . getObject o chunk posNorm))
+          map (\o -> GetObject chunk posNorm o)
           . sort
           . filter storable
           $ world ^. objectsAt chunk posNorm
       | otherwise = []
     shootArrowItems
-      | (validChunk chunk && world ^. playerPos /= pos) =
-          [DropdownItem ShootArrow $ shootArrow pos]
+      | (validChunk chunk && world ^. playerPos /= pos) = [ShootArrow pos]
       | otherwise = []
     tradeItems
       | neighbor && elemOf (objectsAt chunk posNorm . folded) Villager world =
-          [ DropdownItem (TradeObject 3 Meat 2 Gold) (pure . tradeObjects 3 Meat 2 Gold)
+          [ TradeObjects 3 Meat 2 Gold
             | world ^. inventory . at Meat . non 0 >= 3
-          ] ++ [ DropdownItem (TradeObject 2 Gold 1 Meat) (pure . tradeObjects 2 Gold 1 Meat)
+          ] ++ [ TradeObjects 2 Gold 1 Meat
             | world ^. inventory . at Gold . non 0 >= 2
           ]
       | otherwise = []
@@ -96,7 +95,9 @@ applyDropdownClick clickPos (Dropdown anchor cmds) world =
   applyCont . set activeDropdown Nothing $ world
   where
     applyCont = case clickedItem of
-      Just (DropdownItem _ cont) -> cont
+      Just (GetObject chunk pos obj) -> pure . getObject chunk pos obj
+      Just (ShootArrow relPos) -> shootArrow relPos
+      Just (TradeObjects gq go rq ro) -> pure . tradeObjects gq go rq ro
       Nothing -> pure
     clickedItem = fmap snd . flip ifind cmds $ \i _ ->
       let topLeft = anchorScr + screenV 0 (i * dropdownItemSize ^. _y)
@@ -188,8 +189,8 @@ shootArrowAt objs
   | elem Deer objs = filter (/= Deer) objs |> Meat
   | otherwise = objs |> Arrow
 
-getObject :: Object -> ChunkV Int -> InChunkV Int -> World -> World
-getObject obj chunk pos =
+getObject :: ChunkV Int -> InChunkV Int -> Object -> World -> World
+getObject chunk pos obj =
   over (inventory . at obj . non 0) (+1)
   . over (objectsAt chunk pos) (filter (/= obj))
 

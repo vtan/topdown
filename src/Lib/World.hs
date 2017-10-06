@@ -6,7 +6,6 @@ import Lib.ChunkData
 import Lib.Spaces
 
 import Control.Lens
-import Control.Monad.Random
 import Data.Array (Array, Ix)
 import Data.Map (Map)
 import Linear.V2
@@ -32,20 +31,13 @@ data MapView
 
 data Dropdown = Dropdown
   { dropdownAnchor :: InChunkV Double
-  , dropdownItems :: [DropdownItem]
+  , dropdownCommands :: [UserCommand]
   } deriving (Show)
 
-data DropdownItem = DropdownItem
-  { dropdownItemCommand :: UserCommand
-  , dropdownItemCont :: forall m. MonadRandom m => World -> m World
-  }
-
-instance Show DropdownItem where show (DropdownItem cmd _) = show cmd
-
 data UserCommand
-  = ShootArrow
-  | GetObject Object
-  | TradeObject Int Object Int Object
+  = ShootArrow (InChunkV Int)
+  | GetObject (ChunkV Int) (InChunkV Int) Object
+  | TradeObjects Int Object Int Object
   deriving (Show)
 
 makeFields ''World
