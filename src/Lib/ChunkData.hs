@@ -4,7 +4,8 @@ module Lib.ChunkData where
 
 import Lib.Spaces
 
-import Control.Lens.TH (makeFields)
+import Control.Lens
+import Data.Char (toLower)
 import Data.Map (Map)
 
 
@@ -25,7 +26,11 @@ data Object
   | Meat
   | Wall
   | Villager
+  | Gold
   deriving (Eq, Ord, Show)
+
+showObject :: Object -> String
+showObject = over _head toLower . show
 
 makeFields ''ChunkGlobal
 makeFields ''ChunkLocal

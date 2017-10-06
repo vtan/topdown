@@ -62,7 +62,7 @@ applyMouseClick world posScr = case world ^. mapView of
         [] -> pure world
         _ -> pure $ set activeDropdown dropdown world
   where
-    withinGetDistance = withinRadius 1 pos (world ^. playerPos)
+    neighbor = withinRadius 1 pos (world ^. playerPos)
     pos = floor <$> fracPos
     fracPos = view (from _TileV) $ scrToTiles tileSize eyeScr (world ^. playerPos . _TileV) posScr
     (chunk, posNorm) = normalizeChunkPos (world ^. playerChunk) pos
@@ -70,9 +70,9 @@ applyMouseClick world posScr = case world ^. mapView of
     dropdown = case items of
       [] -> Nothing
       _ -> Just $ Dropdown fracPos items
-    items = getObjItems ++ shootArrowItems
+    items = tradeItems ++ getObjItems ++ shootArrowItems
     getObjItems
-      | withinGetDistance =
+      | neighbor =
           map (\o -> DropdownItem (GetObject o) (pure . getObject o chunk posNorm))
           . sort
           . filter storable
@@ -81,6 +81,14 @@ applyMouseClick world posScr = case world ^. mapView of
     shootArrowItems
       | (validChunk chunk && world ^. playerPos /= pos) =
           [DropdownItem ShootArrow $ shootArrow pos]
+      | otherwise = []
+    tradeItems
+      | neighbor && elemOf (objectsAt chunk posNorm . folded) Villager world =
+          [ DropdownItem (TradeObject 3 Meat 2 Gold) (pure . tradeObjects 3 Meat 2 Gold)
+            | world ^. inventory . at Meat . non 0 >= 3
+          ] ++ [ DropdownItem (TradeObject 2 Gold 1 Meat) (pure . tradeObjects 2 Gold 1 Meat)
+            | world ^. inventory . at Gold . non 0 >= 2
+          ]
       | otherwise = []
 
 applyDropdownClick :: MonadRandom m => ScreenV Int -> Dropdown -> World -> m World
@@ -185,6 +193,11 @@ getObject obj chunk pos =
   over (inventory . at obj . non 0) (+1)
   . over (objectsAt chunk pos) (filter (/= obj))
 
+tradeObjects :: Int -> Object -> Int -> Object -> World -> World
+tradeObjects givenQty givenObj recvdQty recvdObj =
+  (inventory . at givenObj . non 0 -~ givenQty)
+  . (inventory . at recvdObj . non 0 +~ recvdQty)
+
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
 scancodeToDir = \case
   ScancodeRight -> Just $ unit _x
@@ -205,11 +218,13 @@ passable = \case
   Meat -> True
   Wall -> False
   Villager -> False
+  Gold -> True
 
 storable :: Object -> Bool
 storable = \case
   Arrow -> True
   Meat -> True
+  Gold -> True
   Deer -> False
   Tree -> False
   Wall -> False

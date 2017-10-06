@@ -9,7 +9,6 @@ import Lib.World
 import qualified Lib.Scene as Scene
 
 import Control.Lens
-import Data.Char
 import Data.Monoid
 import SDL
 
@@ -108,6 +107,7 @@ localObjTile tile object = Scene.tileCenteredRectangle tile size color
       Meat -> (meatSize, meatColor)
       Wall -> (1, Scene.Solid $ V3 190 100 20)
       Villager -> (inChunkV 0.3 0.8, Scene.Solid $ V3 255 255 31)
+      Gold -> (0.2, Scene.Solid $ V3 255 255 0)
 
 
 
@@ -119,7 +119,7 @@ inventoryScene world =
     line i str =
       let pos = screenV 0 (fromIntegral $ (i + 1) * 16)
       in Scene.text pos str 255
-    lineStr (obj, count) = Text.pack $ unwords [show count, show obj]
+    lineStr (obj, count) = Text.pack $ unwords [show count, showObject obj]
 
 dropdownScene :: World -> Dropdown -> Scene ScreenV Double
 dropdownScene world (Dropdown anchor items) =
@@ -129,7 +129,9 @@ dropdownScene world (Dropdown anchor items) =
       let pos = anchorScr + screenV 0 (i * dropdownItemSize ^. _y)
           str = case cmd of
             ShootArrow -> "Shoot arrow"
-            GetObject o -> Text.pack $ unwords ["Get", over _head toLower $ show o]
+            GetObject o -> Text.pack $ unwords ["Get", showObject o]
+            TradeObject givenQty givenObj recvdQty recvdObj ->
+              Text.pack $ unwords ["Trade", show givenQty, showObject givenObj, "for", show recvdQty, showObject recvdObj]
       in Scene.rectangle pos (pos + dropdownItemSize) dropdownItemColor
          <> Scene.text pos str 255
     anchorScr = floor <$> localTileToScreen world anchor

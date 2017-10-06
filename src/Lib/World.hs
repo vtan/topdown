@@ -45,6 +45,7 @@ instance Show DropdownItem where show (DropdownItem cmd _) = show cmd
 data UserCommand
   = ShootArrow
   | GetObject Object
+  | TradeObject Int Object Int Object
   deriving (Show)
 
 makeFields ''World

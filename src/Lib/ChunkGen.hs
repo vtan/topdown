@@ -38,7 +38,7 @@ generateChunkLocal seed global = flip evalRand (mkStdGen seed) $ do
     -- Per block in chunk
     treeChance = 0.2 * (global ^. treeDensity)
     -- Per chunk
-    deerChance = 0.1
+    deerChance = 0.7
 
 
 
