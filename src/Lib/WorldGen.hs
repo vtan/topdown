@@ -1,7 +1,7 @@
 module Lib.WorldGen (initialWorld) where
 
-import Lib.ChunkData
-import Lib.Spaces
+import Lib.Model.Spaces
+import Lib.Model.Types
 import Lib.World
 
 import Control.Monad (forM)

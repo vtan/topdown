@@ -1,8 +1,9 @@
 module Lib.Update where
 
-import Lib.ChunkData
 import Lib.ChunkGen
-import Lib.Spaces
+import Lib.Model.Lenses
+import Lib.Model.Spaces
+import Lib.Model.Types
 import Lib.Util
 import Lib.World
 

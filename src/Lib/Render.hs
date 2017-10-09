@@ -1,8 +1,9 @@
 module Lib.Render (renderWorld) where
 
-import Lib.ChunkData
+import Lib.Model.Lenses
+import Lib.Model.Spaces
+import Lib.Model.Types
 import Lib.Scene (Scene)
-import Lib.Spaces
 import Lib.Util
 import Lib.World
 

@@ -1,4 +1,4 @@
-module Lib.Spaces where
+module Lib.Model.Spaces where
 
 import Control.Lens
 import Control.Monad.Zip

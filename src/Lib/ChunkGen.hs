@@ -1,7 +1,8 @@
 module Lib.ChunkGen where
 
-import Lib.ChunkData
-import Lib.Spaces
+import Lib.Model.Lenses
+import Lib.Model.Spaces
+import Lib.Model.Types
 import Lib.Util
 
 import Control.Lens

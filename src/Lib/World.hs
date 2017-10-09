@@ -1,46 +1,15 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Lib.World where
 
-import Lib.ChunkData
-import Lib.Spaces
+import Lib.Model.Lenses
+import Lib.Model.Spaces
+import Lib.Model.Types
 
 import Control.Lens
 import Data.Array (Array, Ix)
-import Data.Map (Map)
+import Data.Char (toLower)
 import Linear.V2
 
 import qualified Data.Array as Array
-
-
-
-data World = World
-  { worldPlayerChunk :: ChunkV Int
-  , worldPlayerPos :: InChunkV Int
-  , worldChunkGlobals :: Array (ChunkV Int) ChunkGlobal
-  , worldLoadedChunkLocals :: Map (ChunkV Int) ChunkLocal
-  , worldMapView :: MapView
-  , worldInventory :: Map Object Int
-  , worldActiveDropdown :: Maybe Dropdown
-  } deriving (Show)
-
-data MapView
-  = Global
-  | Local
-  deriving (Show)
-
-data Dropdown = Dropdown
-  { dropdownAnchor :: InChunkV Double
-  , dropdownCommands :: [UserCommand]
-  } deriving (Show)
-
-data UserCommand
-  = ShootArrow (InChunkV Int)
-  | GetObject (ChunkV Int) (InChunkV Int) Object
-  | TradeObjects Int Object Int Object
-  deriving (Show)
-
-makeFields ''World
 
 
 
@@ -82,6 +51,9 @@ arrayAt i = lens getter setter
 objectsAt :: ChunkV Int -> InChunkV Int -> Traversal' World [Object]
 objectsAt chunk pos =
   loadedChunkLocals . at chunk . _Just . objects . at pos . non []
+
+showObject :: Object -> String
+showObject = over _head toLower . show
 
 worldSize :: Num a => ChunkV a
 worldSize = chunkV 100 100

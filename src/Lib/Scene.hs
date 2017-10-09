@@ -5,7 +5,7 @@ module Lib.Scene
   )
 where
 
-import Lib.Spaces
+import Lib.Model.Spaces
 import Lib.Util
 
 import Control.Lens
