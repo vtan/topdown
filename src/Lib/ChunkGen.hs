@@ -24,7 +24,7 @@ generateChunkLocal seed global = flip evalRand (mkStdGen seed) $ do
     True -> Just <$> Random.uniform chunkRelPositions
     False -> pure Nothing
   treePos <- filterM (const $ randomChance treeChance) chunkRelPositions
-  villageMap <- case global ^. hasVillage of
+  villageMap <- case global ^. _hasVillage of
     True -> generateVillage <$> Random.getRandomR (2, 5)
     False -> pure mempty
   let deers = map (, [Deer]) $ toList deerPos
@@ -37,7 +37,7 @@ generateChunkLocal seed global = flip evalRand (mkStdGen seed) $ do
     }
   where
     -- Per block in chunk
-    treeChance = 0.2 * (global ^. treeDensity)
+    treeChance = 0.2 * (global ^. _treeDensity)
     -- Per chunk
     deerChance = 0.7
 

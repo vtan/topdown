@@ -47,26 +47,26 @@ updateWorld events world = do
 
 applyKeyPress :: MonadRandom m => World -> Scancode -> m World
 applyKeyPress world = pure . \case
-  (scancodeToDir -> Just dir) -> case world ^. mapView of
+  (scancodeToDir -> Just dir) -> case world ^. _mapView of
     Global -> movePlayerGlobal (ChunkV dir) world
     Local -> movePlayerLocal (InChunkV dir) world
   ScancodeTab -> toggleMapView world
   _ -> world
 
 applyMouseClick :: MonadRandom m => World -> ScreenV Int -> m World
-applyMouseClick world posScr = case world ^. mapView of
+applyMouseClick world posScr = case world ^. _mapView of
   Global -> pure world
-  Local -> case world ^. activeDropdown of
+  Local -> case world ^. _activeDropdown of
     Just d -> applyDropdownClick posScr d world
     Nothing ->
       case items of
         [] -> pure world
-        _ -> pure $ set activeDropdown dropdown world
+        _ -> pure $ set _activeDropdown dropdown world
   where
-    neighbor = withinRadius 1 pos (world ^. playerPos)
+    neighbor = withinRadius 1 pos (world ^. _playerPos)
     pos = floor <$> fracPos
-    fracPos = view (from _TileV) $ scrToTiles tileSize eyeScr (world ^. playerPos . _TileV) posScr
-    (chunk, posNorm) = normalizeChunkPos (world ^. playerChunk) pos
+    fracPos = view (from _TileV) $ scrToTiles tileSize eyeScr (world ^. _playerPos . _TileV) posScr
+    (chunk, posNorm) = normalizeChunkPos (world ^. _playerChunk) pos
     eyeScr = (`quot` 2) <$> screenSize - tileSize
     dropdown = case items of
       [] -> Nothing
@@ -80,20 +80,20 @@ applyMouseClick world posScr = case world ^. mapView of
           $ world ^. objectsAt chunk posNorm
       | otherwise = []
     shootArrowItems
-      | (validChunk chunk && world ^. playerPos /= pos) = [ShootArrow pos]
+      | (validChunk chunk && world ^. _playerPos /= pos) = [ShootArrow pos]
       | otherwise = []
     tradeItems
       | neighbor && elemOf (objectsAt chunk posNorm . folded) Villager world =
           [ TradeObjects 3 Meat 2 Gold
-            | world ^. inventory . at Meat . non 0 >= 3
+            | world ^. _inventory . at Meat . non 0 >= 3
           ] ++ [ TradeObjects 2 Gold 1 Meat
-            | world ^. inventory . at Gold . non 0 >= 2
+            | world ^. _inventory . at Gold . non 0 >= 2
           ]
       | otherwise = []
 
 applyDropdownClick :: MonadRandom m => ScreenV Int -> Dropdown -> World -> m World
 applyDropdownClick clickPos (Dropdown anchor cmds) world =
-  applyCont . set activeDropdown Nothing $ world
+  applyCont . set _activeDropdown Nothing $ world
   where
     applyCont = case clickedItem of
       Just (GetObject chunk pos obj) -> pure . getObject chunk pos obj
@@ -110,67 +110,67 @@ applyDropdownClick clickPos (Dropdown anchor cmds) world =
 movePlayerGlobal :: ChunkV Int -> World -> World
 movePlayerGlobal dir world
   | validChunk i' = world
-    & playerChunk .~ i'
+    & _playerChunk .~ i'
     & loadChunksNearPlayer
   | otherwise = world
   where
-    i' = (world ^. playerChunk) + dir
+    i' = (world ^. _playerChunk) + dir
 
 movePlayerLocal :: InChunkV Int -> World -> World
-movePlayerLocal dir world = case world ^. loadedChunkLocals . at i' of
+movePlayerLocal dir world = case world ^. _loadedChunkLocals . at i' of
   Just chunkLocal | passableTile chunkLocal pos' -> world
-    & set playerChunk i'
-    & set playerPos pos'
+    & set _playerChunk i'
+    & set _playerPos pos'
     & loadChunksNearPlayer
   _ -> world
   where
     (i', pos') = normalizeChunkPos
-      (world ^. playerChunk)
-      (world ^. playerPos + dir)
+      (world ^. _playerChunk)
+      (world ^. _playerPos + dir)
 
 toggleMapView :: World -> World
-toggleMapView world = case world ^. mapView of
+toggleMapView world = case world ^. _mapView of
   Global ->
-    let i = world ^. playerChunk
-    in case world ^. loadedChunkLocals . at i of
+    let i = world ^. _playerChunk
+    in case world ^. _loadedChunkLocals . at i of
       Just chunkLocal ->
         let passableTiles = filter (passableTile chunkLocal) chunkRelPositions
         in case passableTiles of
           pos:_ -> world
-            & mapView .~ Local
-            & playerPos .~ pos
+            & _mapView .~ Local
+            & _playerPos .~ pos
           [] -> world
       Nothing ->
         world
-  Local -> world & mapView .~ Global
+  Local -> world & _mapView .~ Global
 
 loadChunksNearPlayer :: World -> World
 loadChunksNearPlayer world = world
-  & loadedChunkLocals %~ (\x -> foldl' load x nearLocals)
+  & _loadedChunkLocals %~ (\x -> foldl' load x nearLocals)
   & unloadFarChunks
   where
     load locals idx = locals & at idx %~ \case
       x@Just{} -> x
       Nothing ->
-        let global = globals ^. arrayAt idx
+        let global = globals ^. singular (ix idx)
             seed = hash idx
         in Just $ generateChunkLocal seed global
-    globals = world ^. chunkGlobals
+    globals = world ^. _chunkGlobals
     nearLocals = filter validChunk
-      $ (+) (world ^. playerChunk)
+      $ (+) (world ^. _playerChunk)
       <$> range ((-chunkLoadRadius), chunkLoadRadius)
 
 unloadFarChunks :: World -> World
 unloadFarChunks world 
   | noChunksToUnload > 0 = world
-    & loadedChunkLocals %~ (\x -> foldl' (flip Map.delete) x farChunks)
+    & _loadedChunkLocals %~ (\x -> foldl' (flip Map.delete) x farChunks)
   | otherwise = world
   where
-    locals = world ^. loadedChunkLocals
+    locals = world ^. _loadedChunkLocals
     noChunksToUnload = Map.size locals - maxLoadedChunks
     farChunks = map snd . take noChunksToUnload
       . reverse . sort
-      . map (qd (world ^. playerChunk) &&& id)
+      . map (qd (world ^. _playerChunk) &&& id)
       . Set.toList . Map.keysSet $ locals
 
 shootArrow :: MonadRandom m => InChunkV Int -> World -> m World
@@ -179,7 +179,7 @@ shootArrow target world = do
   hitPos <- if hit
     then pure target
     else Random.uniform neighbors
-  let (hitChunk, hitPosNorm) = normalizeChunkPos (world ^. playerChunk) hitPos
+  let (hitChunk, hitPosNorm) = normalizeChunkPos (world ^. _playerChunk) hitPos
   pure $ over (objectsAt hitChunk hitPosNorm) shootArrowAt world
   where
     hitChance = 0.7
@@ -192,13 +192,13 @@ shootArrowAt objs
 
 getObject :: ChunkV Int -> InChunkV Int -> Object -> World -> World
 getObject chunk pos obj =
-  over (inventory . at obj . non 0) (+1)
+  over (_inventory . at obj . non 0) (+1)
   . over (objectsAt chunk pos) (filter (/= obj))
 
 tradeObjects :: Int -> Object -> Int -> Object -> World -> World
 tradeObjects givenQty givenObj recvdQty recvdObj =
-  (inventory . at givenObj . non 0 -~ givenQty)
-  . (inventory . at recvdObj . non 0 +~ recvdQty)
+  (_inventory . at givenObj . non 0 -~ givenQty)
+  . (_inventory . at recvdObj . non 0 +~ recvdQty)
 
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
 scancodeToDir = \case
@@ -210,7 +210,7 @@ scancodeToDir = \case
 
 passableTile :: ChunkLocal -> InChunkV Int -> Bool
 passableTile cl p = null . filter (not . passable)
-  $ cl ^. objects . at p . _Just
+  $ cl ^. _objects . at p . _Just
 
 passable :: Object -> Bool
 passable = \case

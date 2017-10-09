@@ -23,6 +23,7 @@ library
     , Lib.Model.Types
     , Lib.Render
     , Lib.Scene
+    , Lib.TH
     , Lib.Update
     , Lib.Util
     , Lib.WorldGen
@@ -39,6 +40,7 @@ library
     mtl,
     sdl2,
     sdl2-ttf,
+    template-haskell,
     text,
     vector
   default-extensions:

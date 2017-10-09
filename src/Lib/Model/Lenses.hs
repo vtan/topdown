@@ -3,11 +3,10 @@
 module Lib.Model.Lenses where
 
 import Lib.Model.Types
-
-import Control.Lens.TH
-
+import Lib.TH
 
 
-makeFields ''World
-makeFields ''ChunkGlobal
-makeFields ''ChunkLocal
+
+makeFields_ ''World
+makeFields_ ''ChunkGlobal
+makeFields_ ''ChunkLocal

@@ -22,7 +22,7 @@ renderWorld :: Renderer -> Sdl.Font.Font -> World -> IO ()
 renderWorld renderer font world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
-  let scene = case world ^. mapView of
+  let scene = case world ^. _mapView of
         Global -> globalScene world
         Local -> localScene world
   Scene.render renderer font scene
@@ -43,7 +43,7 @@ localScene :: World -> Scene ScreenV Double
 localScene world =
   Scene.vmap (localTileToScreen world) (localTiles visibleTiles world)
   <> inventoryScene world
-  <> foldMap (dropdownScene world) (world ^. activeDropdown)
+  <> foldMap (dropdownScene world) (world ^. _activeDropdown)
   where
     visibleTiles = rangeZip (topLeft, bottomRight)
     topLeft = screenToLocalTile world 0
@@ -57,20 +57,20 @@ globalTiles (filter validChunk -> visibleChunks) world =
   where
     globalTerrainTiles = foldMap (globalTerrainTile world) visibleChunks
     playerTile = Scene.tileCenteredRectangle
-      (world ^. playerChunk) playerSize playerColor
+      (world ^. _playerChunk) playerSize playerColor
 
 globalTerrainTile :: World -> ChunkV Int -> Scene ChunkV Double
 globalTerrainTile world chunk = terrain <> villageMarker <> loadMarker
   where
     terrain = Scene.tileCenteredRectangle chunk 1 (Scene.Solid color)
     color = floor <$> lerp gradient forestColor plainsColor
-    gradient = global ^. treeDensity
+    gradient = global ^. _treeDensity
     villageMarker
-      | global ^. hasVillage =
+      | global ^. _hasVillage =
           Scene.tileCenteredRectangle chunk villageMarkerSize villageMarkerColor
       | otherwise = mempty
-    global = world ^. chunkGlobals . arrayAt chunk
-    loadMarker = case world ^. loadedChunkLocals . at chunk of
+    global = world ^. _chunkGlobals . singular (ix chunk)
+    loadMarker = case world ^. _loadedChunkLocals . at chunk of
       Just _ -> Scene.tileCenteredRectangle chunk 0.1 (Scene.Outline 255)
       Nothing -> mempty
 
@@ -81,7 +81,7 @@ localTiles visibleTiles world = localTerrainObjTiles <> playerTile
   where
     localTerrainObjTiles = foldMap (localTerrainObjTile world) visibleTiles
     playerTile = Scene.tileCenteredRectangle
-      (world ^. playerPos) playerSize playerColor
+      (world ^. _playerPos) playerSize playerColor
 
 localTerrainObjTile :: World -> InChunkV Int -> Scene InChunkV Double
 localTerrainObjTile world tile =
@@ -89,13 +89,13 @@ localTerrainObjTile world tile =
     Just local ->
       let objTiles =
             foldMap (localObjTile tile)
-            . view (objects . at normTile . _Just)
+            . view (_objects . at normTile . _Just)
             $ local
       in terrainTile <> objTiles
     Nothing -> mempty
   where
-    localAtChunk = world ^. loadedChunkLocals . at chunk
-    (chunk, normTile) = normalizeChunkPos (world ^. playerChunk) tile
+    localAtChunk = world ^. _loadedChunkLocals . at chunk
+    (chunk, normTile) = normalizeChunkPos (world ^. _playerChunk) tile
     terrainTile = Scene.tileCenteredRectangle tile 1 terrainColor
 
 localObjTile :: InChunkV Int -> Object -> Scene InChunkV Double
@@ -115,7 +115,7 @@ localObjTile tile object = Scene.tileCenteredRectangle tile size color
 inventoryScene :: World -> Scene ScreenV Double
 inventoryScene world =
   Scene.text 0 "Inventory" 255
-  <> (ifoldMap line . map lineStr . itoList . view inventory) world
+  <> (ifoldMap line . map lineStr . itoList . view _inventory) world
   where
     line i str =
       let pos = screenV 0 (fromIntegral $ (i + 1) * 16)
