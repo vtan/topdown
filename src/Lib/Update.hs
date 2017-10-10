@@ -10,13 +10,13 @@ import Lib.World
 import Control.Arrow ((&&&))
 import Control.Lens
 import Control.Monad.Random (MonadRandom)
-import Data.Foldable (foldlM)
+import Data.Foldable (foldl', foldlM)
 import Data.Hashable (hash)
 import Data.Ix (range)
-import Data.List (foldl', sort)
 import SDL
 
 import qualified Control.Monad.Random as Random
+import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
@@ -75,7 +75,7 @@ applyMouseClick world posScr = case world ^. _mapView of
     getObjItems
       | neighbor =
           map (\o -> GetObject chunk posNorm o)
-          . sort
+          . List.sort
           . filter storable
           $ world ^. objectsAt chunk posNorm
       | otherwise = []
@@ -170,7 +170,7 @@ unloadFarChunks world
     locals = world ^. _loadedChunkLocals
     noChunksToUnload = Map.size locals - maxLoadedChunks
     farChunks = map snd . take noChunksToUnload
-      . reverse . sort
+      . reverse . List.sort
       . map (qd (world ^. _playerChunk) &&& id)
       . Set.toList . Map.keysSet $ locals
 
@@ -196,8 +196,8 @@ shootArrowAt objs
 
 getObject :: ChunkV Int -> InChunkV Int -> Object -> World -> World
 getObject chunk pos obj =
-  over (objectsInInventory obj) (+1)
-  . over (objectsAt chunk pos) (filter (/= obj))
+  (objectsInInventory obj +~ 1)
+  . (objectsAt chunk pos %~ List.delete obj)
 
 tradeObjects :: Int -> Object -> Int -> Object -> World -> World
 tradeObjects givenQty givenObj recvdQty recvdObj =
