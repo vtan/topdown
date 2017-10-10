@@ -8,6 +8,7 @@ import Control.Monad (forM)
 import Control.Monad.Random
 
 import qualified Data.Array as Array
+import qualified Data.Map as Map
 import qualified Data.Ix as Ix
 
 
@@ -22,7 +23,7 @@ initialWorld = do
     , worldChunkGlobals = Array.array (0, worldSize - 1) assocs
     , worldLoadedChunkLocals = mempty
     , worldMapView = Local
-    , worldInventory = mempty
+    , worldInventory = Map.fromList [(Arrow, 10)]
     , worldActiveDropdown = Nothing
     }
 

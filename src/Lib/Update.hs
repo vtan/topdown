@@ -80,14 +80,15 @@ applyMouseClick world posScr = case world ^. _mapView of
           $ world ^. objectsAt chunk posNorm
       | otherwise = []
     shootArrowItems
-      | (validChunk chunk && world ^. _playerPos /= pos) = [ShootArrow pos]
+      | (validChunk chunk && world ^. _playerPos /= pos) =
+          [ShootArrow pos | has (_inventory . at Arrow . _Just) world]
       | otherwise = []
     tradeItems
       | neighbor && elemOf (objectsAt chunk posNorm . folded) Villager world =
           [ TradeObjects 3 Meat 2 Gold
-            | world ^. _inventory . at Meat . non 0 >= 3
+            | world ^. objectsInInventory Meat >= 3
           ] ++ [ TradeObjects 2 Gold 1 Meat
-            | world ^. _inventory . at Gold . non 0 >= 2
+            | world ^. objectsInInventory Gold >= 2
           ]
       | otherwise = []
 
@@ -180,7 +181,10 @@ shootArrow target world = do
     then pure target
     else Random.uniform neighbors
   let (hitChunk, hitPosNorm) = normalizeChunkPos (world ^. _playerChunk) hitPos
-  pure $ over (objectsAt hitChunk hitPosNorm) shootArrowAt world
+  pure
+    . over (objectsAt hitChunk hitPosNorm) shootArrowAt
+    . over (objectsInInventory Arrow) (subtract 1)
+    $ world
   where
     hitChance = 0.7
     neighbors = [target + v | v <- range ((-1), 1), v /= 0]
@@ -192,13 +196,13 @@ shootArrowAt objs
 
 getObject :: ChunkV Int -> InChunkV Int -> Object -> World -> World
 getObject chunk pos obj =
-  over (_inventory . at obj . non 0) (+1)
+  over (objectsInInventory obj) (+1)
   . over (objectsAt chunk pos) (filter (/= obj))
 
 tradeObjects :: Int -> Object -> Int -> Object -> World -> World
 tradeObjects givenQty givenObj recvdQty recvdObj =
-  (_inventory . at givenObj . non 0 -~ givenQty)
-  . (_inventory . at recvdObj . non 0 +~ recvdQty)
+  (objectsInInventory givenObj -~ givenQty)
+  . (objectsInInventory recvdObj +~ recvdQty)
 
 scancodeToDir :: Num a => Scancode -> Maybe (V2 a)
 scancodeToDir = \case

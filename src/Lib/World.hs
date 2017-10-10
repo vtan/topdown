@@ -5,11 +5,8 @@ import Lib.Model.Spaces
 import Lib.Model.Types
 
 import Control.Lens
-import Data.Array (Array, Ix)
 import Data.Char (toLower)
 import Linear.V2
-
-import qualified Data.Array as Array
 
 
 
@@ -45,6 +42,9 @@ validChunk i = xInRange && yInRange
 objectsAt :: ChunkV Int -> InChunkV Int -> Traversal' World [Object]
 objectsAt chunk pos =
   _loadedChunkLocals . at chunk . _Just . _objects . at pos . non []
+
+objectsInInventory :: Object -> Lens' World Int
+objectsInInventory obj = _inventory . at obj . non 0
 
 showObject :: Object -> String
 showObject = over _head toLower . show
