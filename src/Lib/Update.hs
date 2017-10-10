@@ -46,12 +46,15 @@ updateWorld events world = do
 
 
 applyKeyPress :: MonadRandom m => World -> Scancode -> m World
-applyKeyPress world = pure . \case
-  (scancodeToDir -> Just dir) -> case world ^. _mapView of
-    Global -> movePlayerGlobal (ChunkV dir) world
-    Local -> movePlayerLocal (InChunkV dir) world
-  ScancodeTab -> toggleMapView world
-  _ -> world
+applyKeyPress world scancode = pure $
+  case scancode of
+    _ | has (_activeDropdown . _Just) world -> world
+    (scancodeToDir -> Just dir) ->
+      case world ^. _mapView of
+        Global -> movePlayerGlobal (ChunkV dir) world
+        Local -> movePlayerLocal (InChunkV dir) world
+    ScancodeTab -> toggleMapView world
+    _ -> world
 
 applyMouseClick :: MonadRandom m => World -> ScreenV Int -> m World
 applyMouseClick world posScr = case world ^. _mapView of
