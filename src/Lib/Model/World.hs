@@ -1,4 +1,4 @@
-module Lib.World where
+module Lib.Model.World where
 
 import Lib.Model.Lenses
 import Lib.Model.Spaces

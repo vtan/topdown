@@ -1,4 +1,4 @@
-module Lib.ChunkGen where
+module Lib.Game.ChunkGen where
 
 import Lib.Model.Lenses
 import Lib.Model.Spaces

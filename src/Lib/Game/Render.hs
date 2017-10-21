@@ -1,13 +1,13 @@
-module Lib.Render (renderWorld) where
+module Lib.Game.Render (renderWorld) where
 
+import Lib.Graphics.Scene (Scene)
 import Lib.Model.Lenses
 import Lib.Model.Spaces
 import Lib.Model.Types
-import Lib.Scene (Scene)
+import Lib.Model.World
 import Lib.Util
-import Lib.World
 
-import qualified Lib.Scene as Scene
+import qualified Lib.Graphics.Scene as Scene
 
 import Control.Lens
 import Data.Monoid

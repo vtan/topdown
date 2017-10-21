@@ -1,8 +1,8 @@
-module Lib.WorldGen (initialWorld) where
+module Lib.Game.WorldGen (initialWorld) where
 
 import Lib.Model.Spaces
 import Lib.Model.Types
-import Lib.World
+import Lib.Model.World
 
 import Control.Monad (forM)
 import Control.Monad.Random

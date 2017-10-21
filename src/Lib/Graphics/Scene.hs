@@ -1,4 +1,4 @@
-module Lib.Scene
+module Lib.Graphics.Scene
   ( Scene(..), Elem(..), Style(..)
   , vmap, rectangle, tileCenteredRectangle, text
   , render

@@ -1,11 +1,11 @@
-module Lib.Update where
+module Lib.Game.Update where
 
-import Lib.ChunkGen
+import Lib.Game.ChunkGen
 import Lib.Model.Lenses
 import Lib.Model.Spaces
 import Lib.Model.Types
+import Lib.Model.World
 import Lib.Util
-import Lib.World
 
 import Control.Arrow ((&&&))
 import Control.Lens

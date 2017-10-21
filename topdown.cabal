@@ -16,19 +16,20 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:
-      Lib.ChunkGen
+      Lib.Game.ChunkGen
+    , Lib.Game.Render
+    , Lib.Game.Update
+    , Lib.Game.WorldGen
+    , Lib.Graphics.Scene
     , Lib.Main
     , Lib.Model.Lenses
     , Lib.Model.Spaces
     , Lib.Model.Types
-    , Lib.Render
-    , Lib.Scene
+    , Lib.Model.World
     , Lib.TH
-    , Lib.Update
     , Lib.Util
-    , Lib.WorldGen
-    , Lib.World
-  ghc-options:         -Wall
+  ghc-options:         -Wall -optl-fuse-ld=gold -O2
+  ld-options:  -fuse-ld=gold
   build-depends:
     base >= 4.7 && < 5,
     array,
@@ -63,7 +64,8 @@ library
 executable topdown-exe
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N -optl-fuse-ld=gold -O2
+  ld-options:  -fuse-ld=gold
   build-depends:       base
                      , topdown
   default-language:    Haskell2010

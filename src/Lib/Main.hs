@@ -1,8 +1,8 @@
 module Lib.Main (main) where
 
-import Lib.Render
-import Lib.Update
-import Lib.WorldGen
+import Lib.Game.Render
+import Lib.Game.Update
+import Lib.Game.WorldGen
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (when)
