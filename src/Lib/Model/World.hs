@@ -52,9 +52,6 @@ showObject = over _head toLower . show
 worldSize :: Num a => ChunkV a
 worldSize = chunkV 100 100
 
-screenSize :: Num a => ScreenV a
-screenSize = screenV 800 600
-
 tileSize :: Num a => ScreenV a
 tileSize = screenV 32 32
 

@@ -93,3 +93,6 @@ chunkRelPositions = [InChunkV $ V2 x y
 
 chunkSize :: Num a => a
 chunkSize = 64
+
+screenSize :: Num a => ScreenV a
+screenSize = screenV 1280 720
