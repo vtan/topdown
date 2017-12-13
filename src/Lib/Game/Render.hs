@@ -13,12 +13,12 @@ import Control.Lens
 import Data.Monoid
 import SDL
 
-import qualified SDL.Font as Sdl.Font
 import qualified Data.Text as Text
+import qualified SDL.TTF.FFI as Sdl.Font (TTFFont)
 
 
 
-renderWorld :: Renderer -> Sdl.Font.Font -> World -> IO ()
+renderWorld :: Renderer -> Sdl.Font.TTFFont -> World -> IO ()
 renderWorld renderer font world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
