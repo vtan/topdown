@@ -1,0 +1,51 @@
+name: topdown
+
+ghc-options:
+  - -Wall
+  - -optl-fuse-ld=gold
+  - -O2
+ld-options:
+  - -fuse-ld=gold
+
+library:
+  source-dirs: src
+  dependencies:
+    - base
+    - array
+    - containers
+    - hashable
+    - lens
+    - linear
+    - MonadRandom
+    - mtl
+    - sdl2
+    - sdl2-ttf
+    - template-haskell
+    - text
+    - vector
+  default-extensions:
+    - DeriveFunctor
+    - FlexibleContexts
+    - FlexibleInstances
+    - FunctionalDependencies
+    - GeneralizedNewtypeDeriving
+    - LambdaCase
+    - MultiParamTypeClasses
+    - OverloadedStrings
+    - RankNTypes
+    - TupleSections
+    - TypeApplications
+    - TypeFamilies
+    - ViewPatterns
+
+executables:
+  topdown-exe:
+    source-dirs: app
+    main: Main.hs
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - base
+      - topdown
