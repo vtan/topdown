@@ -16,11 +16,8 @@ import Linear
 import Linear.Affine (Point(P))
 import SDL (($=))
 
-import qualified Data.Text as Text
 import qualified SDL as Sdl
-import qualified SDL.Raw.Types as Sdl (Color(..))
-import qualified SDL.TTF as Sdl.Font
-import qualified SDL.TTF.FFI as Sdl.Font (TTFFont)
+import qualified SDL.Font as Sdl.Font
 
 
 
@@ -71,11 +68,11 @@ text :: v a -> Text -> V3 Word8 -> Scene v a
 text p t c = Scene [Text p t c]
 
 render :: RealFrac a
-  => Sdl.Renderer -> Sdl.Font.TTFFont -> Scene V2 (Screen a) -> IO ()
+  => Sdl.Renderer -> Sdl.Font.Font -> Scene V2 (Screen a) -> IO ()
 render renderer font (Scene elems) = traverse_ (renderElem renderer font) elems
 
 renderElem :: RealFrac a
-  => Sdl.Renderer -> Sdl.Font.TTFFont -> Elem V2 (Screen a) -> IO ()
+  => Sdl.Renderer -> Sdl.Font.Font -> Elem V2 (Screen a) -> IO ()
 renderElem renderer font = \case
   Rectangle minCorner maxCorner style -> case style of
     Solid color -> do
@@ -84,8 +81,8 @@ renderElem renderer font = \case
     Outline color -> do
       setColor color
       Sdl.drawRect renderer $ sdlRect minCorner maxCorner
-  Text corner text_ (color4 -> V4 r g b a) -> do
-    surface <- Sdl.Font.renderUTF8Blended font (Text.unpack text_) (Sdl.Color r g b a)
+  Text corner text_ (color4 -> color) -> do
+    surface <- Sdl.Font.blended font color text_
     size <- Sdl.surfaceDimensions surface
     texture <- Sdl.createTextureFromSurface renderer surface
     Sdl.copy renderer texture Nothing (Just $ Sdl.Rectangle (P $ v2 corner) size)

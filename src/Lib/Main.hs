@@ -11,17 +11,17 @@ import Control.Monad.Random (evalRandIO)
 import Data.Function (fix)
 
 import qualified SDL as Sdl
-import qualified SDL.TTF as Sdl.Font
+import qualified SDL.Font as Sdl.Font
 
 
 
 main :: IO ()
 main = do
   Sdl.initializeAll
-  _ <- Sdl.Font.init
+  _ <- Sdl.Font.initialize
   window <- Sdl.createWindow "topdown" windowConfig
   renderer <- Sdl.createRenderer window (-1) rendererConfig
-  font <- Sdl.Font.openFont fontPath 12
+  font <- Sdl.Font.load fontPath 12
   world0 <- loadChunksNearPlayer <$> evalRandIO initialWorld
   flip fix world0 $ \go world -> do
     events <- Sdl.pollEvents
