@@ -13,6 +13,7 @@ library:
     - base
     - array
     - containers
+    - generic-lens
     - hashable
     - lens
     - linear
@@ -24,13 +25,12 @@ library:
     - text
     - vector
   default-extensions:
+    - DataKinds
     - DeriveFunctor
-    - FlexibleContexts
-    - FlexibleInstances
-    - FunctionalDependencies
+    - DeriveGeneric
     - GeneralizedNewtypeDeriving
     - LambdaCase
-    - MultiParamTypeClasses
+    - NamedFieldPuns
     - OverloadedStrings
     - RankNTypes
     - TupleSections

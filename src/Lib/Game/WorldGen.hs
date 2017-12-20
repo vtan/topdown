@@ -18,13 +18,13 @@ initialWorld = do
   assocs <- forM (Ix.range (0, worldSize - 1)) $ \i ->
     (i,) <$> generateChunkGlobal i
   pure World
-    { worldPlayerChunk = 0
-    , worldPlayerPos = 0
-    , worldChunkGlobals = Array.array (0, worldSize - 1) assocs
-    , worldLoadedChunkLocals = mempty
-    , worldMapView = Local
-    , worldInventory = Map.fromList [(Arrow, 10)]
-    , worldActiveDropdown = Nothing
+    { playerChunk = 0
+    , playerPos = 0
+    , chunkGlobals = Array.array (0, worldSize - 1) assocs
+    , loadedChunkLocals = mempty
+    , mapView = Local
+    , inventory = Map.fromList [(Arrow, 10)]
+    , activeDropdown = Nothing
     }
 
 

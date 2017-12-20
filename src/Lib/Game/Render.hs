@@ -1,7 +1,6 @@
 module Lib.Game.Render (renderWorld) where
 
 import Lib.Graphics.Scene (Scene)
-import Lib.Model.Lenses
 import Lib.Model.Spaces
 import Lib.Model.Types
 import Lib.Model.World
@@ -10,6 +9,7 @@ import Lib.Util
 import qualified Lib.Graphics.Scene as Scene
 
 import Control.Lens
+import Data.Generics.Product (field)
 import Data.Monoid
 import SDL
 
@@ -22,7 +22,7 @@ renderWorld :: Renderer -> Sdl.Font.Font -> World -> IO ()
 renderWorld renderer font world = do
   rendererDrawColor renderer $= bgColor
   clear renderer
-  let scene = case world ^. _mapView of
+  let scene = case world ^. field @"mapView" of
         Global -> globalScene world
         Local -> localScene world
   Scene.render renderer font scene
@@ -43,7 +43,7 @@ localScene :: World -> Scene V2 (Screen Double)
 localScene world =
   Scene.vmap (localTileToScreen world) (localTiles visibleTiles world)
   <> inventoryScene world
-  <> foldMap (dropdownScene world) (world ^. _activeDropdown)
+  <> foldMap (dropdownScene world) (world ^. field @"activeDropdown")
   where
     visibleTiles = rangeZip (topLeft, bottomRight)
     topLeft = screenToLocalTile world 0
@@ -57,20 +57,20 @@ globalTiles (filter validChunk -> visibleChunks) world =
   where
     globalTerrainTiles = foldMap (globalTerrainTile world) visibleChunks
     playerTile = Scene.tileCenteredRectangle
-      (world ^. _playerChunk) playerSize playerColor
+      (world ^. field @"playerChunk") playerSize playerColor
 
 globalTerrainTile :: World -> ChunkV Int -> Scene V2 (Chunk Double)
 globalTerrainTile world chunk = terrain <> villageMarker <> loadMarker
   where
     terrain = Scene.tileCenteredRectangle chunk 1 (Scene.Solid color)
     color = floor <$> lerp gradient forestColor plainsColor
-    gradient = global ^. _treeDensity
+    gradient = global ^. field @"treeDensity"
     villageMarker
-      | global ^. _hasVillage =
+      | global ^. field @"hasVillage" =
           Scene.tileCenteredRectangle chunk villageMarkerSize villageMarkerColor
       | otherwise = mempty
-    global = world ^. _chunkGlobals . singular (ix chunk)
-    loadMarker = case world ^. _loadedChunkLocals . at chunk of
+    global = world ^. field @"chunkGlobals" . singular (ix chunk)
+    loadMarker = case world ^. field @"loadedChunkLocals" . at chunk of
       Just _ -> Scene.tileCenteredRectangle chunk 0.1 (Scene.Outline 255)
       Nothing -> mempty
 
@@ -81,7 +81,7 @@ localTiles visibleTiles world = localTerrainObjTiles <> playerTile
   where
     localTerrainObjTiles = foldMap (localTerrainObjTile world) visibleTiles
     playerTile = Scene.tileCenteredRectangle
-      (world ^. _playerPos) playerSize playerColor
+      (world ^. field @"playerPos") playerSize playerColor
 
 localTerrainObjTile :: World -> InChunkV Int -> Scene V2 (InChunk Double)
 localTerrainObjTile world tile =
@@ -89,13 +89,13 @@ localTerrainObjTile world tile =
     Just local ->
       let objTiles =
             foldMap (localObjTile tile)
-            . view (_objects . at normTile . _Just)
+            . view (field @"objects" . at normTile . _Just)
             $ local
       in terrainTile <> objTiles
     Nothing -> mempty
   where
-    localAtChunk = world ^. _loadedChunkLocals . at chunk
-    (chunk, normTile) = normalizeChunkPos (world ^. _playerChunk) tile
+    localAtChunk = world ^. field @"loadedChunkLocals" . at chunk
+    (chunk, normTile) = normalizeChunkPos (world ^. field @"playerChunk") tile
     terrainTile = Scene.tileCenteredRectangle tile 1 terrainColor
 
 localObjTile :: InChunkV Int -> Object -> Scene V2 (InChunk Double)
@@ -115,7 +115,7 @@ localObjTile tile object = Scene.tileCenteredRectangle tile size color
 inventoryScene :: World -> Scene V2 (Screen Double)
 inventoryScene world =
   Scene.text 0 "Inventory" 255
-  <> (ifoldMap line . map lineStr . itoList . view _inventory) world
+  <> (ifoldMap line . map lineStr . itoList . view (field @"inventory")) world
   where
     line i str =
       let pos = screenV 0 (fromIntegral $ (i + 1) * 16)
@@ -123,8 +123,8 @@ inventoryScene world =
     lineStr (obj, count) = Text.pack $ unwords [show count, showObject obj]
 
 dropdownScene :: World -> Dropdown -> Scene V2 (Screen Double)
-dropdownScene world (Dropdown anchor cmds) =
-  fmap fromIntegral . flip ifoldMap cmds $ \i cmd ->
+dropdownScene world Dropdown{ anchor, commands } =
+  fmap fromIntegral . flip ifoldMap commands $ \i cmd ->
     let pos = anchorScr + V2 0 (i *^ dropdownItemSize ^. _y)
         str = case cmd of
           ShootArrow _ -> "Shoot arrow"

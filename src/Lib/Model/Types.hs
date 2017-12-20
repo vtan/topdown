@@ -4,18 +4,19 @@ import Lib.Model.Spaces
 
 import Data.Array (Array)
 import Data.Map (Map)
+import GHC.Generics (Generic)
 
 
 
 data World = World
-  { worldPlayerChunk :: ChunkV Int
-  , worldPlayerPos :: InChunkV Int
-  , worldChunkGlobals :: Array (ChunkV Int) ChunkGlobal
-  , worldLoadedChunkLocals :: Map (ChunkV Int) ChunkLocal
-  , worldMapView :: MapView
-  , worldInventory :: Map Object Int
-  , worldActiveDropdown :: Maybe Dropdown
-  } deriving (Show)
+  { playerChunk :: ChunkV Int
+  , playerPos :: InChunkV Int
+  , chunkGlobals :: Array (ChunkV Int) ChunkGlobal
+  , loadedChunkLocals :: Map (ChunkV Int) ChunkLocal
+  , mapView :: MapView
+  , inventory :: Map Object Int
+  , activeDropdown :: Maybe Dropdown
+  } deriving (Generic, Show)
 
 data MapView
   = Global
@@ -25,13 +26,13 @@ data MapView
 
 
 data ChunkGlobal = ChunkGlobal
-  { chunkGlobalTreeDensity :: Float
-  , chunkGlobalHasVillage :: Bool
-  } deriving (Eq, Show)
+  { treeDensity :: Float
+  , hasVillage :: Bool
+  } deriving (Generic, Show)
 
 data ChunkLocal = ChunkLocal
-  { chunkLocalObjects :: Map (InChunkV Int) [Object]
-  } deriving (Eq, Show)
+  { objects :: Map (InChunkV Int) [Object]
+  } deriving (Generic, Show)
 
 data Object
   = Tree
@@ -46,9 +47,9 @@ data Object
 
 
 data Dropdown = Dropdown
-  { dropdownAnchor :: InChunkV Double
-  , dropdownCommands :: [UserCommand]
-  } deriving (Show)
+  { anchor :: InChunkV Double
+  , commands :: [UserCommand]
+  } deriving (Generic, Show)
 
 data UserCommand
   = ShootArrow (InChunkV Int)
