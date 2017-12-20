@@ -16,10 +16,11 @@ globalTileToScreen world =
     tileSize
     (fromIntegral <$> world ^. _playerChunk)
     (fromIntegral <$> playerEyeOnScr)
+  . fmap (Tile . unChunk)
 
 screenToGlobalTile :: World -> ScreenV Int -> ChunkV Int
-screenToGlobalTile world = fmap (floor @Double)
-  . scrToTiles tileSize playerEyeOnScr (world ^. _playerChunk)
+screenToGlobalTile world = fmap (floor @(Tile Double))
+  . scrToTiles tileSize playerEyeOnScr (fromIntegral <$> world ^. _playerChunk)
 
 localTileToScreen :: Num a => World -> InChunkV a -> ScreenV a
 localTileToScreen world =
@@ -27,15 +28,16 @@ localTileToScreen world =
     tileSize
     (fromIntegral <$> world ^. _playerPos)
     (fromIntegral <$> playerEyeOnScr)
+  . fmap (Tile . unInChunk)
 
 screenToLocalTile :: World -> ScreenV Int -> InChunkV Int
-screenToLocalTile world = fmap (floor @Double)
-  . scrToTiles tileSize playerEyeOnScr (world ^. _playerPos)
+screenToLocalTile world = fmap (floor @(Tile Double))
+  . scrToTiles tileSize playerEyeOnScr (fromIntegral <$> world ^. _playerPos)
 
 validChunk :: (Num a, Ord a) => ChunkV a -> Bool
 validChunk i = xInRange && yInRange
   where
-    ChunkV (V2 xInRange yInRange) = (&&)
+    V2 xInRange yInRange = (&&)
       <$> ((<=) <$> 0 <*> i)
       <*> ((<) <$> i <*> worldSize)
 

@@ -36,7 +36,7 @@ main = do
         when continue $ goLater world'
   where
   windowConfig = Sdl.defaultWindow
-    { Sdl.windowInitialSize = unScreenV screenSize }
+    { Sdl.windowInitialSize = unScreen <$> screenSize }
   rendererConfig = Sdl.defaultRenderer
     { Sdl.rendererType = Sdl.AcceleratedVSyncRenderer }
 

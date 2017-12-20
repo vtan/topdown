@@ -9,7 +9,6 @@ import Lib.Model.Spaces
 import Lib.Util
 
 import Control.Lens
-import Control.Monad.Zip
 import Data.Foldable
 import Data.Text (Text)
 import Data.Word
@@ -48,7 +47,7 @@ data Style
 
 
 
-vmap :: (MonadZip v, Ord a) => (u a -> v a) -> Scene u a -> Scene v a
+vmap :: Ord b => (V2 a -> V2 b) -> Scene V2 a -> Scene V2 b
 vmap f (Scene elems) = Scene $ map vmap' elems
   where
     vmap' = \case
@@ -61,23 +60,22 @@ vmap f (Scene elems) = Scene $ map vmap' elems
 rectangle :: t a -> t a -> Style -> Scene t a
 rectangle mi ma s = Scene [Rectangle mi ma s]
 
-tileCenteredRectangle :: (IsTileV t, Fractional a)
-  => t Int -> t a -> Style -> Scene t a
+tileCenteredRectangle :: (Integral a, Fractional b) => V2 a -> V2 b -> Style -> Scene V2 b
 tileCenteredRectangle tile size style =
   Scene [Rectangle minCorner maxCorner style]
   where
-    minCorner = fmap fromIntegral tile ^+^ (1 ^. from _V2 ^-^ size) ^/ 2
-    maxCorner = minCorner ^+^ size
+    minCorner = fmap fromIntegral tile + (V2 1 1 - size) ^/ 2
+    maxCorner = minCorner + size
 
 text :: v a -> Text -> V3 Word8 -> Scene v a
 text p t c = Scene [Text p t c]
 
 render :: RealFrac a
-  => Sdl.Renderer -> Sdl.Font.TTFFont -> Scene ScreenV a -> IO ()
+  => Sdl.Renderer -> Sdl.Font.TTFFont -> Scene V2 (Screen a) -> IO ()
 render renderer font (Scene elems) = traverse_ (renderElem renderer font) elems
 
 renderElem :: RealFrac a
-  => Sdl.Renderer -> Sdl.Font.TTFFont -> Elem ScreenV a -> IO ()
+  => Sdl.Renderer -> Sdl.Font.TTFFont -> Elem V2 (Screen a) -> IO ()
 renderElem renderer font = \case
   Rectangle minCorner maxCorner style -> case style of
     Solid color -> do
@@ -96,5 +94,5 @@ renderElem renderer font = \case
   where
     color4 color = _xyz .~ color $ 255
     setColor (color4 -> color) = Sdl.rendererDrawColor renderer $= color
-    sdlRect mi ma = Just $ Sdl.Rectangle (P $ v2 mi) (v2 $ ma ^-^ mi)
-    v2 = fmap floor . view _V2
+    sdlRect mi ma = Just $ Sdl.Rectangle (P $ v2 mi) (v2 $ ma - mi)
+    v2 = fmap (floor . unScreen)

@@ -35,7 +35,7 @@ updateWorld events world = do
         })) <- events
       ]
     mouseClicks =
-      [ ScreenV $ fromIntegral <$> pos
+      [ fromIntegral <$> pos
       | Event _ (MouseButtonEvent (MouseButtonEventData
         { mouseButtonEventMotion = Pressed
         , mouseButtonEventButton = ButtonLeft
@@ -51,8 +51,8 @@ applyKeyPress world scancode = pure $
     _ | has (_activeDropdown . _Just) world -> world
     (scancodeToDir -> Just dir) ->
       case world ^. _mapView of
-        Global -> movePlayerGlobal (ChunkV dir) world
-        Local -> movePlayerLocal (InChunkV dir) world
+        Global -> movePlayerGlobal (Chunk <$> dir) world
+        Local -> movePlayerLocal (InChunk <$> dir) world
     ScancodeTab -> toggleMapView world
     _ -> world
 
@@ -68,7 +68,7 @@ applyMouseClick world posScr = case world ^. _mapView of
   where
     neighbor = withinRadius 1 pos (world ^. _playerPos)
     pos = floor <$> fracPos
-    fracPos = view (from _TileV) $ scrToTiles tileSize eyeScr (world ^. _playerPos . _TileV) posScr
+    fracPos = InChunk . unTile <$> scrToTiles tileSize eyeScr (fromIntegral <$> world ^. _playerPos) posScr
     (chunk, posNorm) = normalizeChunkPos (world ^. _playerChunk) pos
     eyeScr = (`quot` 2) <$> screenSize - tileSize
     dropdown = case items of
@@ -105,7 +105,7 @@ applyDropdownClick clickPos (Dropdown anchor cmds) world =
       Just (TradeObjects gq go rq ro) -> pure . tradeObjects gq go rq ro
       Nothing -> pure
     clickedItem = fmap snd . flip ifind cmds $ \i _ ->
-      let topLeft = anchorScr + screenV 0 (i * dropdownItemSize ^. _y)
+      let topLeft = anchorScr + V2 0 (i *^ dropdownItemSize ^. _y)
       in inRectangle clickPos (topLeft, topLeft + dropdownItemSize)
     anchorScr = floor <$> localTileToScreen world anchor
 

@@ -30,7 +30,7 @@ renderWorld renderer font world = do
 
 
 
-globalScene :: World -> Scene ScreenV Double
+globalScene :: World -> Scene V2 (Screen Double)
 globalScene world =
   Scene.vmap (globalTileToScreen world)
   $ globalTiles visibleTiles world
@@ -39,7 +39,7 @@ globalScene world =
     topLeft = screenToGlobalTile world 0
     bottomRight = screenToGlobalTile world screenSize
 
-localScene :: World -> Scene ScreenV Double
+localScene :: World -> Scene V2 (Screen Double)
 localScene world =
   Scene.vmap (localTileToScreen world) (localTiles visibleTiles world)
   <> inventoryScene world
@@ -51,15 +51,15 @@ localScene world =
 
 
 
-globalTiles :: [ChunkV Int] -> World -> Scene ChunkV Double
+globalTiles :: [ChunkV Int] -> World -> Scene V2 (Chunk Double)
 globalTiles (filter validChunk -> visibleChunks) world =
-  globalTerrainTiles <> playerTile
+  globalTerrainTiles <> (Chunk . unTile <$> playerTile)
   where
     globalTerrainTiles = foldMap (globalTerrainTile world) visibleChunks
     playerTile = Scene.tileCenteredRectangle
       (world ^. _playerChunk) playerSize playerColor
 
-globalTerrainTile :: World -> ChunkV Int -> Scene ChunkV Double
+globalTerrainTile :: World -> ChunkV Int -> Scene V2 (Chunk Double)
 globalTerrainTile world chunk = terrain <> villageMarker <> loadMarker
   where
     terrain = Scene.tileCenteredRectangle chunk 1 (Scene.Solid color)
@@ -76,14 +76,14 @@ globalTerrainTile world chunk = terrain <> villageMarker <> loadMarker
 
 
 
-localTiles :: [InChunkV Int] -> World -> Scene InChunkV Double
+localTiles :: [InChunkV Int] -> World -> Scene V2 (InChunk Double)
 localTiles visibleTiles world = localTerrainObjTiles <> playerTile
   where
     localTerrainObjTiles = foldMap (localTerrainObjTile world) visibleTiles
     playerTile = Scene.tileCenteredRectangle
       (world ^. _playerPos) playerSize playerColor
 
-localTerrainObjTile :: World -> InChunkV Int -> Scene InChunkV Double
+localTerrainObjTile :: World -> InChunkV Int -> Scene V2 (InChunk Double)
 localTerrainObjTile world tile =
   case localAtChunk of
     Just local ->
@@ -98,7 +98,7 @@ localTerrainObjTile world tile =
     (chunk, normTile) = normalizeChunkPos (world ^. _playerChunk) tile
     terrainTile = Scene.tileCenteredRectangle tile 1 terrainColor
 
-localObjTile :: InChunkV Int -> Object -> Scene InChunkV Double
+localObjTile :: InChunkV Int -> Object -> Scene V2 (InChunk Double)
 localObjTile tile object = Scene.tileCenteredRectangle tile size color
   where
     (size, color) = case object of
@@ -112,7 +112,7 @@ localObjTile tile object = Scene.tileCenteredRectangle tile size color
 
 
 
-inventoryScene :: World -> Scene ScreenV Double
+inventoryScene :: World -> Scene V2 (Screen Double)
 inventoryScene world =
   Scene.text 0 "Inventory" 255
   <> (ifoldMap line . map lineStr . itoList . view _inventory) world
@@ -122,10 +122,10 @@ inventoryScene world =
       in Scene.text pos str 255
     lineStr (obj, count) = Text.pack $ unwords [show count, showObject obj]
 
-dropdownScene :: World -> Dropdown -> Scene ScreenV Double
+dropdownScene :: World -> Dropdown -> Scene V2 (Screen Double)
 dropdownScene world (Dropdown anchor cmds) =
   fmap fromIntegral . flip ifoldMap cmds $ \i cmd ->
-    let pos = anchorScr + screenV 0 (i * dropdownItemSize ^. _y)
+    let pos = anchorScr + V2 0 (i *^ dropdownItemSize ^. _y)
         str = case cmd of
           ShootArrow _ -> "Shoot arrow"
           GetObject _ _ o -> Text.pack $ unwords ["Get", showObject o]
@@ -138,23 +138,23 @@ dropdownScene world (Dropdown anchor cmds) =
 
 
 
-playerSize :: IsTileV t => t Double
-playerSize = view (from _V2) 0.7
+playerSize :: Fractional a => V2 a
+playerSize = 0.7
 
-treeSize :: IsTileV t => t Double
-treeSize = view (from _V2) 0.75
+treeSize :: InChunkV Double
+treeSize = 0.75
 
-arrowSize :: IsTileV t => t Double
-arrowSize = view (from _V2) $ V2 0.9 0.1
+arrowSize :: InChunkV Double
+arrowSize = inChunkV 0.9 0.1
 
-deerSize :: IsTileV t => t Double
-deerSize = view (from _V2) $ V2 0.9 0.6
+deerSize :: InChunkV Double
+deerSize = inChunkV 0.9 0.6
 
-meatSize :: IsTileV t => t Double
-meatSize = view (from _V2) $ V2 0.8 0.4
+meatSize :: InChunkV Double
+meatSize = inChunkV 0.8 0.4
 
-villageMarkerSize :: IsTileV t => t Double
-villageMarkerSize = view (from _V2) 0.8
+villageMarkerSize :: ChunkV Double
+villageMarkerSize = 0.8
 
 dropdownItemColor :: Scene.Style
 dropdownItemColor = Scene.Solid 127

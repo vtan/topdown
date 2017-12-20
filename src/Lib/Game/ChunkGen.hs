@@ -46,7 +46,7 @@ generateChunkLocal seed global = flip evalRand (mkStdGen seed) $ do
 generateVillage :: Int -> Map (InChunkV Int) [Object]
 generateVillage houseCount =
   flip foldMap [1..houseCount] $ \i ->
-    Map.fromList $ (mapped . _1 . _x +~ i * 5) house
+    Map.fromList $ (mapped . _1 . _x +~ InChunk (i * 5)) house
 
 house :: [(InChunkV Int, [Object])]
 house =
