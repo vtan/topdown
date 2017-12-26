@@ -1,11 +1,14 @@
 module Lib.Game.Render (renderWorld) where
 
+import Lib.Game.Dropdown (Dropdown)
+import Lib.Game.Object (Object)
 import Lib.Graphics.Scene (Scene)
 import Lib.Model.Spaces
-import Lib.Model.Types
-import Lib.Model.World
+import Lib.Game.World
 import Lib.Util
 
+import qualified Lib.Game.Object as Object
+import qualified Lib.Game.UserCommand as UserCommand
 import qualified Lib.Graphics.Scene as Scene
 
 import Control.Lens
@@ -102,13 +105,13 @@ localObjTile :: InChunkV Int -> Object -> Scene V2 (InChunk Double)
 localObjTile tile object = Scene.tileCenteredRectangle tile size color
   where
     (size, color) = case object of
-      Tree -> (treeSize, treeColor)
-      Arrow -> (arrowSize, arrowColor)
-      Deer -> (deerSize, deerColor)
-      Meat -> (meatSize, meatColor)
-      Wall -> (1, Scene.Solid $ V3 190 100 20)
-      Villager -> (inChunkV 0.3 0.8, Scene.Solid $ V3 255 255 31)
-      Gold -> (0.2, Scene.Solid $ V3 255 255 0)
+      Object.Tree -> (treeSize, treeColor)
+      Object.Arrow -> (arrowSize, arrowColor)
+      Object.Deer -> (deerSize, deerColor)
+      Object.Meat -> (meatSize, meatColor)
+      Object.Wall -> (1, Scene.Solid $ V3 190 100 20)
+      Object.Villager -> (inChunkV 0.3 0.8, Scene.Solid $ V3 255 255 31)
+      Object.Gold -> (0.2, Scene.Solid $ V3 255 255 0)
 
 
 
@@ -123,18 +126,18 @@ inventoryScene world =
     lineStr (obj, count) = Text.pack $ unwords [show count, showObject obj]
 
 dropdownScene :: World -> Dropdown -> Scene V2 (Screen Double)
-dropdownScene world Dropdown{ anchor, commands } =
-  fmap fromIntegral . flip ifoldMap commands $ \i cmd ->
+dropdownScene world dropdown =
+  fmap fromIntegral . flip ifoldMap (dropdown ^. field @"commands") $ \i cmd ->
     let pos = anchorScr + V2 0 (i *^ dropdownItemSize ^. _y)
         str = case cmd of
-          ShootArrow _ -> "Shoot arrow"
-          GetObject _ _ o -> Text.pack $ unwords ["Get", showObject o]
-          TradeObjects givenQty givenObj recvdQty recvdObj ->
+          UserCommand.ShootArrow _ -> "Shoot arrow"
+          UserCommand.GetObject _ _ o -> Text.pack $ unwords ["Get", showObject o]
+          UserCommand.TradeObjects givenQty givenObj recvdQty recvdObj ->
             Text.pack $ unwords ["Trade", show givenQty, showObject givenObj, "for", show recvdQty, showObject recvdObj]
     in Scene.rectangle pos (pos + dropdownItemSize) dropdownItemColor
        <> Scene.text pos str 255
   where
-    anchorScr = floor <$> localTileToScreen world anchor
+    anchorScr = floor <$> localTileToScreen world (dropdown ^. field @"anchor")
 
 
 

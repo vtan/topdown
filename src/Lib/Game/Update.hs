@@ -1,10 +1,14 @@
 module Lib.Game.Update where
 
 import Lib.Game.ChunkGen
+import Lib.Game.Dropdown (Dropdown(Dropdown))
+import Lib.Game.Object (Object)
 import Lib.Model.Spaces
-import Lib.Model.Types
-import Lib.Model.World
+import Lib.Game.World
 import Lib.Util
+
+import qualified Lib.Game.Object as Object
+import qualified Lib.Game.UserCommand as UserCommand
 
 import Control.Arrow ((&&&))
 import Control.Lens
@@ -77,37 +81,37 @@ applyMouseClick world posScr = case world ^. field @"mapView" of
     items = tradeItems ++ getObjItems ++ shootArrowItems
     getObjItems
       | neighbor =
-          map (\o -> GetObject chunk posNorm o)
+          map (\o -> UserCommand.GetObject chunk posNorm o)
           . List.sort
           . filter storable
           $ world ^. objectsAt chunk posNorm
       | otherwise = []
     shootArrowItems
       | (validChunk chunk && world ^. field @"playerPos" /= pos) =
-          [ShootArrow pos | has (field @"inventory" . at Arrow . _Just) world]
+          [UserCommand.ShootArrow pos | has (field @"inventory" . at Object.Arrow . _Just) world]
       | otherwise = []
     tradeItems
-      | neighbor && elemOf (objectsAt chunk posNorm . folded) Villager world =
-          [ TradeObjects 3 Meat 2 Gold
-            | world ^. objectsInInventory Meat >= 3
-          ] ++ [ TradeObjects 2 Gold 1 Meat
-            | world ^. objectsInInventory Gold >= 2
+      | neighbor && elemOf (objectsAt chunk posNorm . folded) Object.Villager world =
+          [ UserCommand.TradeObjects 3 Object.Meat 2 Object.Gold
+            | world ^. objectsInInventory Object.Meat >= 3
+          ] ++ [ UserCommand.TradeObjects 2 Object.Gold 1 Object.Meat
+            | world ^. objectsInInventory Object.Gold >= 2
           ]
       | otherwise = []
 
 applyDropdownClick :: MonadRandom m => ScreenV Int -> Dropdown -> World -> m World
-applyDropdownClick clickPos Dropdown{ anchor, commands } world =
+applyDropdownClick clickPos dropdown world =
   applyCont . set (field @"activeDropdown") Nothing $ world
   where
     applyCont = case clickedItem of
-      Just (GetObject chunk pos obj) -> pure . getObject chunk pos obj
-      Just (ShootArrow relPos) -> shootArrow relPos
-      Just (TradeObjects gq go rq ro) -> pure . tradeObjects gq go rq ro
+      Just (UserCommand.GetObject chunk pos obj) -> pure . getObject chunk pos obj
+      Just (UserCommand.ShootArrow relPos) -> shootArrow relPos
+      Just (UserCommand.TradeObjects gq go rq ro) -> pure . tradeObjects gq go rq ro
       Nothing -> pure
-    clickedItem = fmap snd . flip ifind commands $ \i _ ->
+    clickedItem = fmap snd . flip ifind (dropdown ^. field @"commands") $ \i _ ->
       let topLeft = anchorScr + V2 0 (i *^ dropdownItemSize ^. _y)
       in inRectangle clickPos (topLeft, topLeft + dropdownItemSize)
-    anchorScr = floor <$> localTileToScreen world anchor
+    anchorScr = floor <$> localTileToScreen world (dropdown ^. field @"anchor")
 
 
 
@@ -186,7 +190,7 @@ shootArrow target world = do
   let (hitChunk, hitPosNorm) = normalizeChunkPos (world ^. field @"playerChunk") hitPos
   pure
     . over (objectsAt hitChunk hitPosNorm) shootArrowAt
-    . over (objectsInInventory Arrow) (subtract 1)
+    . over (objectsInInventory Object.Arrow) (subtract 1)
     $ world
   where
     hitChance = 0.7
@@ -194,8 +198,8 @@ shootArrow target world = do
 
 shootArrowAt :: [Object] -> [Object]
 shootArrowAt objs
-  | elem Deer objs = filter (/= Deer) objs |> Meat
-  | otherwise = objs |> Arrow
+  | elem Object.Deer objs = filter (/= Object.Deer) objs |> Object.Meat
+  | otherwise = objs |> Object.Arrow
 
 getObject :: ChunkV Int -> InChunkV Int -> Object -> World -> World
 getObject chunk pos obj =
@@ -221,23 +225,23 @@ passableTile cl p = null . filter (not . passable)
 
 passable :: Object -> Bool
 passable = \case
-  Tree -> False
-  Arrow -> True
-  Deer -> False
-  Meat -> True
-  Wall -> False
-  Villager -> False
-  Gold -> True
+  Object.Tree -> False
+  Object.Arrow -> True
+  Object.Deer -> False
+  Object.Meat -> True
+  Object.Wall -> False
+  Object.Villager -> False
+  Object.Gold -> True
 
 storable :: Object -> Bool
 storable = \case
-  Arrow -> True
-  Meat -> True
-  Gold -> True
-  Deer -> False
-  Tree -> False
-  Wall -> False
-  Villager -> False
+  Object.Arrow -> True
+  Object.Meat -> True
+  Object.Gold -> True
+  Object.Deer -> False
+  Object.Tree -> False
+  Object.Wall -> False
+  Object.Villager -> False
 
 
 

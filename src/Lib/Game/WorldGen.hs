@@ -1,8 +1,9 @@
 module Lib.Game.WorldGen (initialWorld) where
 
 import Lib.Model.Spaces
-import Lib.Model.Types
-import Lib.Model.World
+import Lib.Game.World
+
+import qualified Lib.Game.Object as Object
 
 import Control.Monad (forM)
 import Control.Monad.Random
@@ -23,7 +24,7 @@ initialWorld = do
     , chunkGlobals = Array.array (0, worldSize - 1) assocs
     , loadedChunkLocals = mempty
     , mapView = Local
-    , inventory = Map.fromList [(Arrow, 10)]
+    , inventory = Map.fromList [(Object.Arrow, 10)]
     , activeDropdown = Nothing
     }
 

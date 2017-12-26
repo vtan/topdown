@@ -1,8 +1,11 @@
 module Lib.Game.ChunkGen where
 
+import Lib.Game.Object (Object)
+import Lib.Game.World (ChunkGlobal(..), ChunkLocal(..))
 import Lib.Model.Spaces
-import Lib.Model.Types
 import Lib.Util
+
+import qualified Lib.Game.Object as Object
 
 import Control.Lens
 import Control.Monad (filterM)
@@ -27,8 +30,8 @@ generateChunkLocal seed global = flip evalRand (mkStdGen seed) $ do
   villageMap <- case global ^. field @"hasVillage" of
     True -> generateVillage <$> Random.getRandomR (2, 5)
     False -> pure mempty
-  let deers = map (, [Deer]) $ toList deerPos
-      trees = map (, [Tree]) treePos
+  let deers = map (, [Object.Deer]) $ toList deerPos
+      trees = map (, [Object.Tree]) treePos
   pure ChunkLocal
     { objects =
         villageMap
@@ -54,5 +57,5 @@ house =
       , inChunkV 0 1, inChunkV 2 1
       , inChunkV 0 0, inChunkV 2 0
       ]
-      (repeat [Wall])
-  ++ [(inChunkV 1 1, [Villager]), (inChunkV 1 0, [])]
+      (repeat [Object.Wall])
+  ++ [(inChunkV 1 1, [Object.Villager]), (inChunkV 1 0, [])]

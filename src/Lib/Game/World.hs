@@ -1,12 +1,42 @@
-module Lib.Model.World where
+module Lib.Game.World where
 
+import Lib.Game.Dropdown (Dropdown)
+import Lib.Game.Object (Object)
 import Lib.Model.Spaces
-import Lib.Model.Types
 
 import Control.Lens
+import Data.Array (Array)
 import Data.Char (toLower)
 import Data.Generics.Product (field)
+import Data.Map (Map)
+import GHC.Generics (Generic)
 import Linear.V2
+
+
+
+data World = World
+  { playerChunk :: ChunkV Int
+  , playerPos :: InChunkV Int
+  , chunkGlobals :: Array (ChunkV Int) ChunkGlobal
+  , loadedChunkLocals :: Map (ChunkV Int) ChunkLocal
+  , mapView :: MapView
+  , inventory :: Map Object Int
+  , activeDropdown :: Maybe Dropdown
+  } deriving (Generic, Show)
+
+data ChunkGlobal = ChunkGlobal
+  { treeDensity :: Float
+  , hasVillage :: Bool
+  } deriving (Generic, Show)
+
+data ChunkLocal = ChunkLocal
+  { objects :: Map (InChunkV Int) [Object]
+  } deriving (Generic, Show)
+
+data MapView
+  = Global
+  | Local
+  deriving (Show)
 
 
 
