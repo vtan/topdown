@@ -15,6 +15,7 @@ library:
     - containers
     - generic-lens
     - hashable
+    - interpolate
     - lens
     - linear
     - MonadRandom

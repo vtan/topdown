@@ -78,9 +78,6 @@ objectsAt chunk pos =
 objectsInInventory :: Object -> Lens' World Int
 objectsInInventory obj = field @"inventory" . at obj . non 0
 
-showObject :: Object -> String
-showObject = over _head toLower . show
-
 worldSize :: Num a => ChunkV a
 worldSize = chunkV 100 100
 

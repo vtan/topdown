@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Lib.Game.Render (renderWorld) where
 
 import Lib.Game.Dropdown (Dropdown)
@@ -14,9 +16,9 @@ import qualified Lib.Graphics.Scene as Scene
 import Control.Lens
 import Data.Generics.Product (field)
 import Data.Monoid
+import Data.String.Interpolate.IsString (i)
 import SDL
 
-import qualified Data.Text as Text
 import qualified SDL.Font as Sdl.Font
 
 
@@ -120,20 +122,20 @@ inventoryScene world =
   Scene.text 0 "Inventory" 255
   <> (ifoldMap line . map lineStr . itoList . view (field @"inventory")) world
   where
-    line i str =
-      let pos = screenV 0 (fromIntegral $ (i + 1) * 16)
+    line row str =
+      let pos = screenV 0 (fromIntegral $ (row + 1) * 16)
       in Scene.text pos str 255
-    lineStr (obj, count) = Text.pack $ unwords [show count, showObject obj]
+    lineStr (obj, count) = [i|#{count} #{Lower obj}|]
 
 dropdownScene :: World -> Dropdown -> Scene V2 (Screen Double)
 dropdownScene world dropdown =
-  fmap fromIntegral . flip ifoldMap (dropdown ^. field @"commands") $ \i cmd ->
-    let pos = anchorScr + V2 0 (i *^ dropdownItemSize ^. _y)
+  fmap fromIntegral . flip ifoldMap (dropdown ^. field @"commands") $ \row cmd ->
+    let pos = anchorScr + V2 0 (row *^ dropdownItemSize ^. _y)
         str = case cmd of
           UserCommand.ShootArrow _ -> "Shoot arrow"
-          UserCommand.GetObject _ _ o -> Text.pack $ unwords ["Get", showObject o]
+          UserCommand.GetObject _ _ o -> [i|Get #{Lower o}|]
           UserCommand.TradeObjects givenQty givenObj recvdQty recvdObj ->
-            Text.pack $ unwords ["Trade", show givenQty, showObject givenObj, "for", show recvdQty, showObject recvdObj]
+            [i|Trade #{givenQty} #{Lower givenObj} for #{recvdQty} #{Lower recvdObj}|]
     in Scene.rectangle pos (pos + dropdownItemSize) dropdownItemColor
        <> Scene.text pos str 255
   where

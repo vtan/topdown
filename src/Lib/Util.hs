@@ -2,6 +2,7 @@ module Lib.Util where
 
 import Control.Monad.Random
 import Control.Monad.Zip
+import Data.Char (toLower)
 import Data.Ix
 import Linear
 
@@ -30,3 +31,9 @@ inRectangle p (minCorner, maxCorner) =
 
 randomChance :: MonadRandom m => Float -> m Bool
 randomChance x = (< x) <$> getRandom
+
+
+
+newtype Lower a = Lower { unLower :: a }
+instance Show a => Show (Lower a) where
+  show = map toLower . show . unLower
