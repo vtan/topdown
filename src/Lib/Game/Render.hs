@@ -4,6 +4,7 @@ module Lib.Game.Render (renderWorld) where
 
 import Lib.Game.Dropdown (Dropdown)
 import Lib.Game.Object (Object)
+import Lib.Graphics.RenderContext (RenderContext(..))
 import Lib.Graphics.Scene (Scene)
 import Lib.Model.Spaces
 import Lib.Game.World
@@ -19,21 +20,22 @@ import Control.Lens
 import Data.Generics.Product (field)
 import Data.Monoid
 import Data.String.Interpolate.IsString (i)
-import SDL
+import Linear
+import SDL (($=))
 
-import qualified SDL.Font as Sdl.Font
+import qualified SDL as Sdl
 
 
 
-renderWorld :: Renderer -> Sdl.Font.Font -> World -> IO ()
-renderWorld renderer font world = do
-  rendererDrawColor renderer $= bgColor
-  clear renderer
+renderWorld :: RenderContext -> World -> IO ()
+renderWorld renderCtx@RenderContext{ renderer } world = do
+  Sdl.rendererDrawColor renderer $= bgColor
+  Sdl.clear renderer
   let scene = case world ^. field @"mapView" of
         Global -> globalScene world
         Local -> localScene world
-  Scene.render renderer font scene
-  present renderer
+  Scene.render renderCtx scene
+  Sdl.present renderer
 
 
 

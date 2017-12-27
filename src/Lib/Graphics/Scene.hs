@@ -5,6 +5,7 @@ module Lib.Graphics.Scene
   )
 where
 
+import Lib.Graphics.RenderContext (RenderContext(..))
 import Lib.Model.Spaces
 import Lib.Util
 
@@ -67,13 +68,12 @@ tileCenteredRectangle tile size style =
 text :: V2 a -> Text -> V3 Word8 -> Scene a
 text p t c = Scene [Text p t c]
 
-render :: RealFrac a
-  => Sdl.Renderer -> Sdl.Font.Font -> Scene (Screen a) -> IO ()
-render renderer font (Scene elems) = traverse_ (renderElem renderer font) elems
+render :: RealFrac a => RenderContext -> Scene (Screen a) -> IO ()
+render renderCtx (Scene elems) =
+  traverse_ (renderElem renderCtx) elems
 
-renderElem :: RealFrac a
-  => Sdl.Renderer -> Sdl.Font.Font -> Elem (Screen a) -> IO ()
-renderElem renderer font = \case
+renderElem :: RealFrac a => RenderContext -> Elem (Screen a) -> IO ()
+renderElem RenderContext{ renderer, font } = \case
   Rectangle minCorner maxCorner style -> case style of
     Solid color -> do
       setColor color

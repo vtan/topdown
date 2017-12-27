@@ -3,6 +3,7 @@ module Lib.Main (main) where
 import Lib.Game.Render
 import Lib.Game.Update
 import Lib.Game.WorldGen
+import Lib.Graphics.RenderContext (RenderContext(..))
 import Lib.Model.Spaces
 
 import Control.Concurrent (threadDelay)
@@ -22,6 +23,10 @@ main = do
   window <- Sdl.createWindow "topdown" windowConfig
   renderer <- Sdl.createRenderer window (-1) rendererConfig
   font <- Sdl.Font.load fontPath 12
+  let renderCtx = RenderContext
+        { renderer = renderer
+        , font = font
+        }
   world0 <- loadChunksNearPlayer <$> evalRandIO initialWorld
   flip fix world0 $ \go world -> do
     events <- Sdl.pollEvents
@@ -32,7 +37,7 @@ main = do
         let continue = null
               [() | Sdl.Event { Sdl.eventPayload = Sdl.QuitEvent } <- events]
         world' <- evalRandIO $ updateWorld events world
-        renderWorld renderer font world'
+        renderWorld renderCtx world'
         when continue $ goLater world'
   where
   windowConfig = Sdl.defaultWindow
