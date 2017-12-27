@@ -11,6 +11,7 @@ import Lib.Util
 
 import qualified Lib.Game.Object as Object
 import qualified Lib.Game.UserCommand as UserCommand
+import qualified Lib.Graphics.Camera as Camera
 import qualified Lib.Graphics.Scene as Scene
 
 import Control.Lens
@@ -37,22 +38,25 @@ renderWorld renderer font world = do
 
 globalScene :: World -> Scene V2 (Screen Double)
 globalScene world =
-  Scene.vmap (globalTileToScreen world)
+  Scene.vmap (Camera.project cam)
   $ globalTiles visibleTiles world
   where
     visibleTiles = rangeZip (topLeft, bottomRight)
-    topLeft = screenToGlobalTile world 0
-    bottomRight = screenToGlobalTile world screenSize
+    topLeft = floor <$> Camera.invProject cam 0
+    bottomRight = floor <$> Camera.invProject cam screenSize
+    cam = globalCamera world
 
 localScene :: World -> Scene V2 (Screen Double)
 localScene world =
-  Scene.vmap (localTileToScreen world) (localTiles visibleTiles world)
+  Scene.vmap (Camera.project cam)
+    (localTiles visibleTiles world)
   <> inventoryScene world
   <> foldMap (dropdownScene world) (world ^. field @"activeDropdown")
   where
     visibleTiles = rangeZip (topLeft, bottomRight)
-    topLeft = screenToLocalTile world 0
-    bottomRight = screenToLocalTile world screenSize
+    topLeft = floor <$> Camera.invProject cam 0
+    bottomRight = floor <$> Camera.invProject cam screenSize
+    cam = localCamera world
 
 
 
@@ -139,7 +143,7 @@ dropdownScene world dropdown =
     in Scene.rectangle pos (pos + dropdownItemSize) dropdownItemColor
        <> Scene.text pos str 255
   where
-    anchorScr = floor <$> localTileToScreen world (dropdown ^. field @"anchor")
+    anchorScr = fmap floor . Camera.project (localCamera world) $ dropdown ^. field @"anchor"
 
 
 

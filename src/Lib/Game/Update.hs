@@ -9,6 +9,7 @@ import Lib.Util
 
 import qualified Lib.Game.Object as Object
 import qualified Lib.Game.UserCommand as UserCommand
+import qualified Lib.Graphics.Camera as Camera
 
 import Control.Arrow ((&&&))
 import Control.Lens
@@ -72,9 +73,8 @@ applyMouseClick world posScr = case world ^. field @"mapView" of
   where
     neighbor = withinRadius 1 pos (world ^. field @"playerPos")
     pos = floor <$> fracPos
-    fracPos = InChunk . unTile <$> scrToTiles tileSize eyeScr (fromIntegral <$> world ^. field @"playerPos") posScr
+    fracPos = Camera.invProject (localCamera world) $ fmap fromIntegral posScr
     (chunk, posNorm) = normalizeChunkPos (world ^. field @"playerChunk") pos
-    eyeScr = (`quot` 2) <$> screenSize - tileSize
     dropdown = case items of
       [] -> Nothing
       _ -> Just $ Dropdown fracPos items
@@ -111,7 +111,7 @@ applyDropdownClick clickPos dropdown world =
     clickedItem = fmap snd . flip ifind (dropdown ^. field @"commands") $ \i _ ->
       let topLeft = anchorScr + V2 0 (i *^ dropdownItemSize ^. _y)
       in inRectangle clickPos (topLeft, topLeft + dropdownItemSize)
-    anchorScr = floor <$> localTileToScreen world (dropdown ^. field @"anchor")
+    anchorScr = fmap floor . Camera.project (localCamera world) $ dropdown ^. field @"anchor"
 
 
 

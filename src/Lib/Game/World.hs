@@ -2,11 +2,13 @@ module Lib.Game.World where
 
 import Lib.Game.Dropdown (Dropdown)
 import Lib.Game.Object (Object)
+import Lib.Graphics.Camera (Camera(Camera))
 import Lib.Model.Spaces
+
+import qualified Lib.Graphics.Camera as Camera
 
 import Control.Lens
 import Data.Array (Array)
-import Data.Char (toLower)
 import Data.Generics.Product (field)
 import Data.Map (Map)
 import GHC.Generics (Generic)
@@ -40,29 +42,19 @@ data MapView
 
 
 
-globalTileToScreen :: Num a => World -> ChunkV a -> ScreenV a
-globalTileToScreen world =
-  tilesToScr
-    tileSize
-    (fromIntegral <$> world ^. field @"playerChunk")
-    (fromIntegral <$> playerEyeOnScr)
-  . fmap (Tile . unChunk)
+globalCamera :: Num a => World -> Camera (Chunk a) (Screen a)
+globalCamera world = Camera
+  { Camera.eye = fromIntegral <$> playerEyeOnScr
+  , Camera.focus = fromIntegral <$> world ^. field @"playerChunk"
+  , Camera.scale = tileSize
+  }
 
-screenToGlobalTile :: World -> ScreenV Int -> ChunkV Int
-screenToGlobalTile world = fmap (floor @(Tile Double))
-  . scrToTiles tileSize playerEyeOnScr (fromIntegral <$> world ^. field @"playerChunk")
-
-localTileToScreen :: Num a => World -> InChunkV a -> ScreenV a
-localTileToScreen world =
-  tilesToScr
-    tileSize
-    (fromIntegral <$> world ^. field @"playerPos")
-    (fromIntegral <$> playerEyeOnScr)
-  . fmap (Tile . unInChunk)
-
-screenToLocalTile :: World -> ScreenV Int -> InChunkV Int
-screenToLocalTile world = fmap (floor @(Tile Double))
-  . scrToTiles tileSize playerEyeOnScr (fromIntegral <$> world ^. field @"playerPos")
+localCamera :: Num a => World -> Camera (InChunk a) (Screen a)
+localCamera world = Camera
+  { Camera.eye = fromIntegral <$> playerEyeOnScr
+  , Camera.focus = fromIntegral <$> world ^. field @"playerPos"
+  , Camera.scale = tileSize
+  }
 
 validChunk :: (Num a, Ord a) => ChunkV a -> Bool
 validChunk i = xInRange && yInRange
@@ -82,7 +74,7 @@ worldSize :: Num a => ChunkV a
 worldSize = chunkV 100 100
 
 tileSize :: Num a => ScreenV a
-tileSize = screenV 32 32
+tileSize = screenV 32 (-32)
 
 dropdownItemSize :: Num a => ScreenV a
 dropdownItemSize = screenV 180 16

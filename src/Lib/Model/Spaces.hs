@@ -1,6 +1,5 @@
 module Lib.Model.Spaces where
 
-import Control.Lens
 import Data.Hashable (Hashable)
 import Data.Ix (Ix)
 import Linear
@@ -37,20 +36,6 @@ inChunkV :: a -> a -> V2 (InChunk a)
 inChunkV x y = V2 (InChunk x) (InChunk y)
 
 
-
-tilesToScr :: Num a => V2 (Screen a) -> V2 (Tile a) -> V2 (Screen a) -> V2 (Tile a) -> V2 (Screen a)
-tilesToScr tileSize eyeTiles eyeScr pos = eyeScr + eyeToPosOnScr
-  where
-    eyeToPosOnScr = Screen <$>
-      over _y negate (fmap unScreen tileSize * fmap unTile (pos - eyeTiles))
-
-scrToTiles :: (Integral a, Fractional b)
-  => V2 (Screen a) -> V2 (Screen a) -> V2 (Tile a) -> V2 (Screen a) -> V2 (Tile b)
-scrToTiles tileSize eyeScr eyeTiles pos =
-  fmap fromIntegral eyeTiles + eyeToPosInTiles
-  where
-    eyeToPosInTiles = Tile . unScreen <$>
-      (over _y negate . fmap fromIntegral $ pos - eyeScr) / fmap fromIntegral tileSize
 
 normalizeChunkPos :: Integral a => ChunkV a -> InChunkV a -> (ChunkV a, InChunkV a)
 normalizeChunkPos i pos = (i + di, pos')
