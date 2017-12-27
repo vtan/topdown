@@ -27,7 +27,7 @@ itemAt pos dropdown =
   . find (\(topLeft, _) -> inRectangle pos (topLeft, topLeft + itemSize))
   $ commandsWithTopLeft dropdown
 
-render :: Num a => (UserCommand -> Text) -> Dropdown (ScreenV a) -> Scene V2 (Screen a)
+render :: Num a => (UserCommand -> Text) -> Dropdown (ScreenV a) -> Scene (Screen a)
 render showCommand dropdown =
   foldMap (\(topLeft, cmd) ->
     let bg = Scene.rectangle topLeft (topLeft + itemSize) bgStyle

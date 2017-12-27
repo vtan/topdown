@@ -37,7 +37,7 @@ renderWorld renderer font world = do
 
 
 
-globalScene :: World -> Scene V2 (Screen Double)
+globalScene :: World -> Scene (Screen Double)
 globalScene world =
   Scene.vmap (Camera.project cam)
   $ globalTiles visibleTiles world
@@ -47,7 +47,7 @@ globalScene world =
     bottomRight = floor <$> Camera.invProject cam screenSize
     cam = globalCamera world
 
-localScene :: World -> Scene V2 (Screen Double)
+localScene :: World -> Scene (Screen Double)
 localScene world =
   Scene.vmap (Camera.project cam)
     (localTiles visibleTiles world)
@@ -61,7 +61,7 @@ localScene world =
 
 
 
-globalTiles :: [ChunkV Int] -> World -> Scene V2 (Chunk Double)
+globalTiles :: [ChunkV Int] -> World -> Scene (Chunk Double)
 globalTiles (filter validChunk -> visibleChunks) world =
   globalTerrainTiles <> (Chunk . unTile <$> playerTile)
   where
@@ -69,7 +69,7 @@ globalTiles (filter validChunk -> visibleChunks) world =
     playerTile = Scene.tileCenteredRectangle
       (world ^. field @"playerChunk") playerSize playerColor
 
-globalTerrainTile :: World -> ChunkV Int -> Scene V2 (Chunk Double)
+globalTerrainTile :: World -> ChunkV Int -> Scene (Chunk Double)
 globalTerrainTile world chunk = terrain <> villageMarker <> loadMarker
   where
     terrain = Scene.tileCenteredRectangle chunk 1 (Scene.Solid color)
@@ -86,14 +86,14 @@ globalTerrainTile world chunk = terrain <> villageMarker <> loadMarker
 
 
 
-localTiles :: [InChunkV Int] -> World -> Scene V2 (InChunk Double)
+localTiles :: [InChunkV Int] -> World -> Scene (InChunk Double)
 localTiles visibleTiles world = localTerrainObjTiles <> playerTile
   where
     localTerrainObjTiles = foldMap (localTerrainObjTile world) visibleTiles
     playerTile = Scene.tileCenteredRectangle
       (world ^. field @"playerPos") playerSize playerColor
 
-localTerrainObjTile :: World -> InChunkV Int -> Scene V2 (InChunk Double)
+localTerrainObjTile :: World -> InChunkV Int -> Scene (InChunk Double)
 localTerrainObjTile world tile =
   case localAtChunk of
     Just local ->
@@ -108,7 +108,7 @@ localTerrainObjTile world tile =
     (chunk, normTile) = normalizeChunkPos (world ^. field @"playerChunk") tile
     terrainTile = Scene.tileCenteredRectangle tile 1 terrainColor
 
-localObjTile :: InChunkV Int -> Object -> Scene V2 (InChunk Double)
+localObjTile :: InChunkV Int -> Object -> Scene (InChunk Double)
 localObjTile tile object = Scene.tileCenteredRectangle tile size color
   where
     (size, color) = case object of
@@ -122,7 +122,7 @@ localObjTile tile object = Scene.tileCenteredRectangle tile size color
 
 
 
-inventoryScene :: World -> Scene V2 (Screen Double)
+inventoryScene :: World -> Scene (Screen Double)
 inventoryScene world =
   Scene.text 0 "Inventory" 255
   <> (ifoldMap line . map lineStr . itoList . view (field @"inventory")) world
@@ -132,7 +132,7 @@ inventoryScene world =
       in Scene.text pos str 255
     lineStr (obj, count) = [i|#{count} #{Lower obj}|]
 
-dropdownScene :: World -> Dropdown (InChunkV Double) -> Scene V2 (Screen Double)
+dropdownScene :: World -> Dropdown (InChunkV Double) -> Scene (Screen Double)
 dropdownScene world dropdown =
   Dropdown.render showCommand
   . fmap (Camera.project $ localCamera world)

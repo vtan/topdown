@@ -21,17 +21,17 @@ import qualified SDL.Font as Sdl.Font
 
 
 
-newtype Scene v a = Scene [Elem v a]
+newtype Scene a = Scene [Elem a]
   deriving (Functor, Monoid, Eq, Show)
 
-data Elem v a
+data Elem a
   = Rectangle
-    { _minCorner :: v a
-    , _maxCorner :: v a
+    { _minCorner :: V2 a
+    , _maxCorner :: V2 a
     , _style :: Style
     }
   | Text
-    { _corner :: v a
+    { _corner :: V2 a
     , _text :: Text
     , _color :: V3 Word8
     }
@@ -44,7 +44,7 @@ data Style
 
 
 
-vmap :: Ord b => (V2 a -> V2 b) -> Scene V2 a -> Scene V2 b
+vmap :: Ord b => (V2 a -> V2 b) -> Scene a -> Scene b
 vmap f (Scene elems) = Scene $ map vmap' elems
   where
     vmap' = \case
@@ -54,25 +54,25 @@ vmap f (Scene elems) = Scene $ map vmap' elems
       Text corner size text_ ->
         Text (f corner) size text_
 
-rectangle :: t a -> t a -> Style -> Scene t a
+rectangle :: V2 a -> V2 a -> Style -> Scene a
 rectangle mi ma s = Scene [Rectangle mi ma s]
 
-tileCenteredRectangle :: (Integral a, Fractional b) => V2 a -> V2 b -> Style -> Scene V2 b
+tileCenteredRectangle :: (Integral a, Fractional b) => V2 a -> V2 b -> Style -> Scene b
 tileCenteredRectangle tile size style =
   Scene [Rectangle minCorner maxCorner style]
   where
     minCorner = fmap fromIntegral tile + (V2 1 1 - size) ^/ 2
     maxCorner = minCorner + size
 
-text :: v a -> Text -> V3 Word8 -> Scene v a
+text :: V2 a -> Text -> V3 Word8 -> Scene a
 text p t c = Scene [Text p t c]
 
 render :: RealFrac a
-  => Sdl.Renderer -> Sdl.Font.Font -> Scene V2 (Screen a) -> IO ()
+  => Sdl.Renderer -> Sdl.Font.Font -> Scene (Screen a) -> IO ()
 render renderer font (Scene elems) = traverse_ (renderElem renderer font) elems
 
 renderElem :: RealFrac a
-  => Sdl.Renderer -> Sdl.Font.Font -> Elem V2 (Screen a) -> IO ()
+  => Sdl.Renderer -> Sdl.Font.Font -> Elem (Screen a) -> IO ()
 renderElem renderer font = \case
   Rectangle minCorner maxCorner style -> case style of
     Solid color -> do
