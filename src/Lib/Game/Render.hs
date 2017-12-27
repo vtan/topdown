@@ -9,6 +9,7 @@ import Lib.Model.Spaces
 import Lib.Game.World
 import Lib.Util
 
+import qualified Lib.Game.Dropdown as Dropdown
 import qualified Lib.Game.Object as Object
 import qualified Lib.Game.UserCommand as UserCommand
 import qualified Lib.Graphics.Camera as Camera
@@ -131,19 +132,17 @@ inventoryScene world =
       in Scene.text pos str 255
     lineStr (obj, count) = [i|#{count} #{Lower obj}|]
 
-dropdownScene :: World -> Dropdown -> Scene V2 (Screen Double)
+dropdownScene :: World -> Dropdown (InChunkV Double) -> Scene V2 (Screen Double)
 dropdownScene world dropdown =
-  fmap fromIntegral . flip ifoldMap (dropdown ^. field @"commands") $ \row cmd ->
-    let pos = anchorScr + V2 0 (row *^ dropdownItemSize ^. _y)
-        str = case cmd of
-          UserCommand.ShootArrow _ -> "Shoot arrow"
-          UserCommand.GetObject _ _ o -> [i|Get #{Lower o}|]
-          UserCommand.TradeObjects givenQty givenObj recvdQty recvdObj ->
-            [i|Trade #{givenQty} #{Lower givenObj} for #{recvdQty} #{Lower recvdObj}|]
-    in Scene.rectangle pos (pos + dropdownItemSize) dropdownItemColor
-       <> Scene.text pos str 255
+  Dropdown.render showCommand
+  . fmap (Camera.project $ localCamera world)
+  $ dropdown
   where
-    anchorScr = fmap floor . Camera.project (localCamera world) $ dropdown ^. field @"anchor"
+    showCommand = \case
+      UserCommand.ShootArrow _ -> "Shoot arrow"
+      UserCommand.GetObject _ _ o -> [i|Get #{Lower o}|]
+      UserCommand.TradeObjects givenQty givenObj recvdQty recvdObj ->
+        [i|Trade #{givenQty} #{Lower givenObj} for #{recvdQty} #{Lower recvdObj}|]
 
 
 
@@ -164,9 +163,6 @@ meatSize = inChunkV 0.8 0.4
 
 villageMarkerSize :: ChunkV Double
 villageMarkerSize = 0.8
-
-dropdownItemColor :: Scene.Style
-dropdownItemColor = Scene.Solid 127
 
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255

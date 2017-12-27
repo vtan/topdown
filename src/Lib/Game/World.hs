@@ -23,7 +23,7 @@ data World = World
   , loadedChunkLocals :: Map (ChunkV Int) ChunkLocal
   , mapView :: MapView
   , inventory :: Map Object Int
-  , activeDropdown :: Maybe Dropdown
+  , activeDropdown :: Maybe (Dropdown (InChunkV Double))
   } deriving (Generic, Show)
 
 data ChunkGlobal = ChunkGlobal
@@ -75,9 +75,6 @@ worldSize = chunkV 100 100
 
 tileSize :: Num a => ScreenV a
 tileSize = screenV 32 (-32)
-
-dropdownItemSize :: Num a => ScreenV a
-dropdownItemSize = screenV 180 16
 
 playerEyeOnScr :: ScreenV Int
 playerEyeOnScr = (`quot` 2) <$> screenSize - tileSize

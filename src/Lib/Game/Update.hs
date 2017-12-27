@@ -7,6 +7,7 @@ import Lib.Model.Spaces
 import Lib.Game.World
 import Lib.Util
 
+import qualified Lib.Game.Dropdown as Dropdown
 import qualified Lib.Game.Object as Object
 import qualified Lib.Game.UserCommand as UserCommand
 import qualified Lib.Graphics.Camera as Camera
@@ -99,7 +100,7 @@ applyMouseClick world posScr = case world ^. field @"mapView" of
           ]
       | otherwise = []
 
-applyDropdownClick :: MonadRandom m => ScreenV Int -> Dropdown -> World -> m World
+applyDropdownClick :: MonadRandom m => ScreenV Int -> Dropdown (InChunkV Double) -> World -> m World
 applyDropdownClick clickPos dropdown world =
   applyCont . set (field @"activeDropdown") Nothing $ world
   where
@@ -108,10 +109,10 @@ applyDropdownClick clickPos dropdown world =
       Just (UserCommand.ShootArrow relPos) -> shootArrow relPos
       Just (UserCommand.TradeObjects gq go rq ro) -> pure . tradeObjects gq go rq ro
       Nothing -> pure
-    clickedItem = fmap snd . flip ifind (dropdown ^. field @"commands") $ \i _ ->
-      let topLeft = anchorScr + V2 0 (i *^ dropdownItemSize ^. _y)
-      in inRectangle clickPos (topLeft, topLeft + dropdownItemSize)
-    anchorScr = fmap floor . Camera.project (localCamera world) $ dropdown ^. field @"anchor"
+    clickedItem =
+      Dropdown.itemAt clickPos
+      . fmap (fmap floor . Camera.project (localCamera world))
+      $ dropdown
 
 
 
