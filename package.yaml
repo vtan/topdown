@@ -11,7 +11,9 @@ library:
   source-dirs: src
   dependencies:
     - base
+    - aeson
     - array
+    - bytestring
     - containers
     - generic-lens
     - hashable
@@ -21,11 +23,13 @@ library:
     - MonadRandom
     - mtl
     - sdl2
+    - sdl2-image
     - sdl2-ttf
     - template-haskell
     - text
     - vector
   default-extensions:
+    - AllowAmbiguousTypes
     - DataKinds
     - DeriveFunctor
     - DeriveGeneric
@@ -34,6 +38,7 @@ library:
     - NamedFieldPuns
     - OverloadedStrings
     - RankNTypes
+    - ScopedTypeVariables
     - TupleSections
     - TypeApplications
     - TypeFamilies

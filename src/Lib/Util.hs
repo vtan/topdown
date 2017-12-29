@@ -1,5 +1,7 @@
 module Lib.Util where
 
+import Control.Exception (Exception, try)
+import Control.Lens
 import Control.Monad.Random
 import Control.Monad.Zip
 import Data.Char (toLower)
@@ -37,3 +39,6 @@ randomChance x = (< x) <$> getRandom
 newtype Lower a = Lower { unLower :: a }
 instance Show a => Show (Lower a) where
   show = map toLower . show . unLower
+
+tryShow :: forall e a. Exception e => IO a -> IO (Either String a)
+tryShow = over (mapped . _Left) (show @e) . try

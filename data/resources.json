@@ -1,0 +1,7 @@
+{
+  "font": "data/liberation-fonts-ttf-2.00.1/LiberationSans-Regular.ttf",
+  "images": {
+    "player": "data/images/player.png",
+    "villager": "data/images/villager.png"
+  }
+}
