@@ -92,8 +92,8 @@ localTiles :: [InChunkV Int] -> World -> Scene (InChunk Double)
 localTiles visibleTiles world = localTerrainObjTiles <> playerTile
   where
     localTerrainObjTiles = foldMap (localTerrainObjTile world) visibleTiles
-    playerTile = Scene.tileCenteredRectangle
-      (world ^. field @"playerPos") playerSize playerColor
+    playerTile = Scene.tileCenteredImage "player"
+      (world ^. field @"playerPos") 1
 
 localTerrainObjTile :: World -> InChunkV Int -> Scene (InChunk Double)
 localTerrainObjTile world tile =
@@ -111,16 +111,14 @@ localTerrainObjTile world tile =
     terrainTile = Scene.tileCenteredRectangle tile 1 terrainColor
 
 localObjTile :: InChunkV Int -> Object -> Scene (InChunk Double)
-localObjTile tile object = Scene.tileCenteredRectangle tile size color
-  where
-    (size, color) = case object of
-      Object.Tree -> (treeSize, treeColor)
-      Object.Arrow -> (arrowSize, arrowColor)
-      Object.Deer -> (deerSize, deerColor)
-      Object.Meat -> (meatSize, meatColor)
-      Object.Wall -> (1, Scene.Solid $ V3 190 100 20)
-      Object.Villager -> (inChunkV 0.3 0.8, Scene.Solid $ V3 255 255 31)
-      Object.Gold -> (0.2, Scene.Solid $ V3 255 255 0)
+localObjTile tile object = case object of
+  Object.Tree -> Scene.tileCenteredRectangle tile treeSize treeColor
+  Object.Arrow -> Scene.tileCenteredRectangle tile arrowSize arrowColor
+  Object.Deer -> Scene.tileCenteredRectangle tile deerSize deerColor
+  Object.Meat -> Scene.tileCenteredRectangle tile meatSize meatColor
+  Object.Wall -> Scene.tileCenteredRectangle tile 1 . Scene.Solid $ V3 190 100 20
+  Object.Villager -> Scene.tileCenteredImage "villager" tile 1
+  Object.Gold -> Scene.tileCenteredRectangle tile 0.2 . Scene.Solid $ V3 255 255 0
 
 
 
