@@ -68,23 +68,19 @@ globalTiles (filter validChunk -> visibleChunks) world =
   globalTerrainTiles <> (Chunk . unTile <$> playerTile)
   where
     globalTerrainTiles = foldMap (globalTerrainTile world) visibleChunks
-    playerTile = Scene.tileCenteredRectangle
-      (world ^. field @"playerChunk") playerSize playerColor
+    playerTile = Scene.tileCenteredImage "player"
+      (world ^. field @"playerChunk") 1
 
 globalTerrainTile :: World -> ChunkV Int -> Scene (Chunk Double)
-globalTerrainTile world chunk = terrain <> villageMarker <> loadMarker
+globalTerrainTile world chunk = terrain <> villageMarker
   where
     terrain = Scene.tileCenteredRectangle chunk 1 (Scene.Solid color)
     color = floor <$> lerp gradient forestColor plainsColor
     gradient = global ^. field @"treeDensity"
     villageMarker
-      | global ^. field @"hasVillage" =
-          Scene.tileCenteredRectangle chunk villageMarkerSize villageMarkerColor
+      | global ^. field @"hasVillage" = Scene.tileCenteredImage "village" chunk 1
       | otherwise = mempty
     global = world ^. field @"chunkGlobals" . singular (ix chunk)
-    loadMarker = case world ^. field @"loadedChunkLocals" . at chunk of
-      Just _ -> Scene.tileCenteredRectangle chunk 0.1 (Scene.Outline 255)
-      Nothing -> mempty
 
 
 
@@ -108,15 +104,15 @@ localTerrainObjTile world tile =
   where
     localAtChunk = world ^. field @"loadedChunkLocals" . at chunk
     (chunk, normTile) = normalizeChunkPos (world ^. field @"playerChunk") tile
-    terrainTile = Scene.tileCenteredRectangle tile 1 terrainColor
+    terrainTile = Scene.tileCenteredImage "grass" tile 1
 
 localObjTile :: InChunkV Int -> Object -> Scene (InChunk Double)
 localObjTile tile object = case object of
-  Object.Tree -> Scene.tileCenteredRectangle tile treeSize treeColor
-  Object.Arrow -> Scene.tileCenteredRectangle tile arrowSize arrowColor
-  Object.Deer -> Scene.tileCenteredRectangle tile deerSize deerColor
-  Object.Meat -> Scene.tileCenteredRectangle tile meatSize meatColor
-  Object.Wall -> Scene.tileCenteredRectangle tile 1 . Scene.Solid $ V3 190 100 20
+  Object.Tree -> Scene.tileCenteredImage "tree" tile 1
+  Object.Arrow -> Scene.tileCenteredImage "arrow" tile 1
+  Object.Deer -> Scene.tileCenteredImage "deer" tile 1
+  Object.Meat -> Scene.tileCenteredImage "meat" tile 1
+  Object.Wall -> Scene.tileCenteredImage "wall" tile 1
   Object.Villager -> Scene.tileCenteredImage "villager" tile 1
   Object.Gold -> Scene.tileCenteredRectangle tile 0.2 . Scene.Solid $ V3 255 255 0
 
@@ -146,50 +142,11 @@ dropdownScene world dropdown =
 
 
 
-playerSize :: Fractional a => V2 a
-playerSize = 0.7
-
-treeSize :: InChunkV Double
-treeSize = 0.75
-
-arrowSize :: InChunkV Double
-arrowSize = inChunkV 0.9 0.1
-
-deerSize :: InChunkV Double
-deerSize = inChunkV 0.9 0.6
-
-meatSize :: InChunkV Double
-meatSize = inChunkV 0.8 0.4
-
-villageMarkerSize :: ChunkV Double
-villageMarkerSize = 0.8
-
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255
 
-playerColor :: Scene.Style
-playerColor = Scene.Solid 255
-
-terrainColor :: Scene.Style
-terrainColor = Scene.Solid $ V3 0 201 0
-
-treeColor :: Scene.Style
-treeColor = Scene.Solid $ V3 157 93 17
-
-arrowColor :: Scene.Style
-arrowColor = Scene.Outline 255
-
-deerColor :: Scene.Style
-deerColor = Scene.Solid $ V3 210 93 17
-
-meatColor :: Scene.Style
-meatColor = Scene.Solid $ V3 210 17 180
-
 plainsColor :: Num a => V3 a
-plainsColor = V3 0 255 0
+plainsColor = V3 121 196 103
 
 forestColor :: Num a => V3 a
 forestColor = V3 0 31 0
-
-villageMarkerColor :: Scene.Style
-villageMarkerColor = treeColor

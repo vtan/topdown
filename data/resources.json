@@ -1,7 +1,14 @@
 {
   "font": "data/liberation-fonts-ttf-2.00.1/LiberationSans-Regular.ttf",
   "images": {
+    "grass": "data/images/grass.png",
+    "wall": "data/images/wall.png",
+    "tree": "data/images/tree.png",
     "player": "data/images/player.png",
-    "villager": "data/images/villager.png"
+    "villager": "data/images/villager.png",
+    "deer": "data/images/deer.png",
+    "meat": "data/images/meat.png",
+    "arrow": "data/images/arrow.png",
+    "village": "data/images/village.png"
   }
 }
