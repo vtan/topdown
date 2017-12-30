@@ -3,7 +3,6 @@ module Lib.Main (main) where
 import Lib.Game.Render
 import Lib.Game.Update
 import Lib.Game.WorldGen
-import Lib.Graphics.RenderContext (RenderContext(..))
 import Lib.Model.Spaces
 
 import qualified Lib.Graphics.RenderContext as RenderContext
@@ -46,6 +45,3 @@ main = do
     { Sdl.windowInitialSize = unScreen <$> screenSize }
   rendererConfig = Sdl.defaultRenderer
     { Sdl.rendererType = Sdl.AcceleratedVSyncRenderer }
-
-fontPath :: FilePath
-fontPath = "data/liberation-fonts-ttf-2.00.1/LiberationSans-Regular.ttf"
