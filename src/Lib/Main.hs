@@ -40,7 +40,8 @@ main = do
             let continue = null
                   [() | Sdl.Event { Sdl.eventPayload = Sdl.QuitEvent } <- events]
             world' <- evalRandIO $ updateWorld events world
-            renderWorld renderCtx world'
+            mousePos <- fmap fromIntegral . Sdl.unP <$> Sdl.getAbsoluteMouseLocation
+            renderWorld renderCtx mousePos world'
             when continue $ goLater world'
   where
   windowConfig = Sdl.defaultWindow

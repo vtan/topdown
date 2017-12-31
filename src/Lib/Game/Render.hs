@@ -24,17 +24,19 @@ import Data.String.Interpolate.IsString (i)
 import Linear
 import SDL (($=))
 
+import qualified Data.List as List
+import qualified Data.Text as Text
 import qualified SDL as Sdl
 
 
 
-renderWorld :: RenderContext -> World -> IO ()
-renderWorld renderCtx@RenderContext{ renderer } world = do
+renderWorld :: RenderContext -> ScreenV Int -> World -> IO ()
+renderWorld renderCtx@RenderContext{ renderer } mousePos world = do
   Sdl.rendererDrawColor renderer $= bgColor
   Sdl.clear renderer
   let scene = case world ^. field @"mapView" of
         Global -> globalScene world
-        Local -> localScene world
+        Local -> localScene mousePos world
   Scene.render renderCtx scene
   Sdl.present renderer
 
@@ -50,16 +52,18 @@ globalScene world =
     bottomRight = floor <$> Camera.invProject cam screenSize
     cam = globalCamera world
 
-localScene :: World -> Scene (Screen Double)
-localScene world =
+localScene :: ScreenV Int -> World -> Scene (Screen Double)
+localScene mousePos world =
   Scene.vmap (Camera.project cam)
     (localTiles visibleTiles world)
   <> inventoryScene world
+  <> objectsOnTileLabel mouseRel world
   <> foldMap (dropdownScene world) (world ^. field @"activeDropdown")
   where
     visibleTiles = rangeZip (topLeft, bottomRight)
     topLeft = floor <$> Camera.invProject cam 0
     bottomRight = floor <$> Camera.invProject cam screenSize
+    mouseRel = floor <$> Camera.invProject cam (fmap fromIntegral mousePos)
     cam = localCamera world
 
 
@@ -150,6 +154,16 @@ dropdownScene world dropdown =
       UserCommand.GetObject _ _ o -> [i|Get #{Lower o}|]
       UserCommand.TradeObjects givenQty givenObj recvdQty recvdObj ->
         [i|Trade #{givenQty} #{Lower givenObj} for #{recvdQty} #{Lower recvdObj}|]
+
+objectsOnTileLabel :: InChunkV Int -> World -> Scene (Screen Double)
+objectsOnTileLabel mousePos world =
+  case objects of
+    [] -> mempty
+    _ -> Scene.text (V2 0 700) text 255
+  where
+    objects = world ^. objectsAt chunk tile
+    (chunk, tile) = normalizeChunkPos (world ^. field @"playerChunk") mousePos
+    text = Text.pack . List.intercalate ", " . map (show . Lower) $ objects
 
 
 
