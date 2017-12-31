@@ -48,5 +48,5 @@ itemSize = screenV 180 16
 bgStyle :: Scene.Style
 bgStyle = Scene.Solid 127
 
-textColor :: Num a => V3 a
-textColor = V3 255 255 255
+textColor :: Num a => V4 a
+textColor = 255

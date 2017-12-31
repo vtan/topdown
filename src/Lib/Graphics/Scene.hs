@@ -39,13 +39,13 @@ data Elem a
   | Text
     { _corner :: V2 a
     , _text :: Text
-    , _color :: V3 Word8
+    , _color :: V4 Word8
     }
   deriving (Functor, Eq, Show)
 
 data Style
-  = Solid (V3 Word8)
-  | Outline (V3 Word8)
+  = Solid (V4 Word8)
+  | Outline (V4 Word8)
   deriving (Eq, Show)
 
 
@@ -83,7 +83,7 @@ tileCenteredImage name tile size =
     minCorner = fmap fromIntegral tile + (V2 1 1 - size) ^/ 2
     maxCorner = minCorner + size
 
-text :: V2 a -> Text -> V3 Word8 -> Scene a
+text :: V2 a -> Text -> V4 Word8 -> Scene a
 text p t c = Scene [Text p t c]
 
 render :: RealFrac a => RenderContext -> Scene (Screen a) -> IO ()
@@ -102,7 +102,7 @@ renderElem RenderContext{ renderer, font, images } = \case
   Image name minCorner maxCorner ->
     for_ (images ^. at name) $ \texture ->
       Sdl.copy renderer texture Nothing $ sdlRect minCorner maxCorner
-  Text corner text_ (color4 -> color) -> do
+  Text corner text_ color -> do
     surface <- Sdl.Font.blended font color text_
     size <- Sdl.surfaceDimensions surface
     texture <- Sdl.createTextureFromSurface renderer surface
@@ -110,7 +110,6 @@ renderElem RenderContext{ renderer, font, images } = \case
     Sdl.destroyTexture texture
     Sdl.freeSurface surface
   where
-    color4 color = _xyz .~ color $ 255
-    setColor (color4 -> color) = Sdl.rendererDrawColor renderer $= color
+    setColor color = Sdl.rendererDrawColor renderer $= color
     sdlRect mi ma = Just $ Sdl.Rectangle (P $ v2 mi) (v2 $ ma - mi)
     v2 = fmap (floor . unScreen)

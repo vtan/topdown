@@ -11,6 +11,7 @@ import Control.Concurrent (threadDelay)
 import Control.Monad (when)
 import Control.Monad.Random (evalRandIO)
 import Data.Function (fix)
+import SDL (($=))
 import System.IO (hPutStrLn, stderr)
 
 import qualified SDL as Sdl
@@ -24,6 +25,7 @@ main = do
   _ <- Sdl.Font.initialize
   window <- Sdl.createWindow "topdown" windowConfig
   renderer <- Sdl.createRenderer window (-1) rendererConfig
+  Sdl.rendererDrawBlendMode renderer $= Sdl.BlendAlphaBlend
   renderCtxErr <- RenderContext.init "data/resources.json" renderer
   case renderCtxErr of
     Left err -> hPutStrLn stderr err

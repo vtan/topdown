@@ -9,3 +9,13 @@ data Object
   | Villager
   | Gold
   deriving (Show, Eq, Ord)
+
+blocksSight :: Object -> Bool
+blocksSight = \case
+  Tree -> True
+  Wall -> True
+  Arrow -> False
+  Deer -> False
+  Meat -> False
+  Villager -> False
+  Gold -> False

@@ -27,6 +27,7 @@ library:
     - sdl2-ttf
     - template-haskell
     - text
+    - unordered-containers
     - vector
   default-extensions:
     - AllowAmbiguousTypes

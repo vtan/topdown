@@ -15,6 +15,7 @@ import qualified Lib.Game.Object as Object
 import qualified Lib.Game.UserCommand as UserCommand
 import qualified Lib.Graphics.Camera as Camera
 import qualified Lib.Graphics.Scene as Scene
+import qualified Lib.Model.Line as Line
 
 import Control.Lens
 import Data.Generics.Product (field)
@@ -85,26 +86,36 @@ globalTerrainTile world chunk = terrain <> villageMarker
 
 
 localTiles :: [InChunkV Int] -> World -> Scene (InChunk Double)
-localTiles visibleTiles world = localTerrainObjTiles <> playerTile
+localTiles visibleTiles world =
+  localTerrainObjTiles <> playerTile
   where
-    localTerrainObjTiles = foldMap (localTerrainObjTile world) visibleTiles
-    playerTile = Scene.tileCenteredImage "player"
-      (world ^. field @"playerPos") 1
+    localTerrainObjTiles =
+      foldMap (\tile -> localTerrainObjTile world (tilesInSight ^. contains tile) tile)
+      $ visibleTiles
+    playerTile = Scene.tileCenteredImage "player" playerPos 1
+    tilesInSight =
+      Line.pointsInSight (\p ->
+        let (chunk, tile) = normalizeChunkPos (world ^. field @"playerChunk") p
+         in any Object.blocksSight $ world ^. objectsAt chunk tile
+      ) playerPos
+      $ visibleTiles
+    playerPos = world ^. field @"playerPos"
 
-localTerrainObjTile :: World -> InChunkV Int -> Scene (InChunk Double)
-localTerrainObjTile world tile =
+localTerrainObjTile :: World -> Bool -> InChunkV Int -> Scene (InChunk Double)
+localTerrainObjTile world inSight tile =
   case localAtChunk of
     Just local ->
       let objTiles =
             foldMap (localObjTile tile)
             . view (field @"objects" . at normTile . _Just)
             $ local
-      in terrainTile <> objTiles
+      in terrainTile <> objTiles <> (if inSight then mempty else shadowTile)
     Nothing -> mempty
   where
     localAtChunk = world ^. field @"loadedChunkLocals" . at chunk
     (chunk, normTile) = normalizeChunkPos (world ^. field @"playerChunk") tile
     terrainTile = Scene.tileCenteredImage "grass" tile 1
+    shadowTile = Scene.tileCenteredRectangle tile 1 . Scene.Solid $ V4 0 0 0 127
 
 localObjTile :: InChunkV Int -> Object -> Scene (InChunk Double)
 localObjTile tile object = case object of
@@ -114,7 +125,7 @@ localObjTile tile object = case object of
   Object.Meat -> Scene.tileCenteredImage "meat" tile 1
   Object.Wall -> Scene.tileCenteredImage "wall" tile 1
   Object.Villager -> Scene.tileCenteredImage "villager" tile 1
-  Object.Gold -> Scene.tileCenteredRectangle tile 0.2 . Scene.Solid $ V3 255 255 0
+  Object.Gold -> Scene.tileCenteredRectangle tile 0.2 . Scene.Solid $ V4 255 255 0 255
 
 
 
@@ -145,8 +156,8 @@ dropdownScene world dropdown =
 bgColor :: Num a => V4 a
 bgColor = V4 63 63 63 255
 
-plainsColor :: Num a => V3 a
-plainsColor = V3 121 196 103
+plainsColor :: Num a => V4 a
+plainsColor = V4 121 196 103 255
 
-forestColor :: Num a => V3 a
-forestColor = V3 0 31 0
+forestColor :: Num a => V4 a
+forestColor = V4 0 31 0 255
